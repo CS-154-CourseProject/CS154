@@ -1,8 +1,6 @@
 #lang racket
-
-;(require "pro.rkt")
-
-(define size 5)
+(provide (all-defined-out))
+(define size 30)
 
 (define (make-2d-vector r c initial)
   (build-vector r (lambda (x) (make-vector c initial))))
@@ -15,6 +13,7 @@
     (begin
       (vector-set! v c val))))
 
+
 (define (part-of-board? i j board)
   (cond
   [(or (= board 1) (= board 3)) (or (and (< i 17) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
@@ -26,24 +25,90 @@
                    (and (> i 11) (< i 19) (if (= 0 (modulo i 2)) (and (>= (* 2 j) (+ i 2)) (<= (* 2 j) (- 38 i)))
                                               (and (>= (* 2 j) (+ i 1)) (<= (* 2 j) (- 37 i))))))]))
 
-(define (next-move pos board current-player)
-  null)
-
 (define (is-endgame? board)
-  (let* ((posns (append* (map (lambda (x) (map (lambda (y) (cons x y)) (range size))) (range size))))
-         (filtered-posns-1 (filter (lambda (posn) (and (player-quadrant (car posn) (cdr posn) 2) (= (2d-vector-ref board (car posn) (cdr posn)) 1))) posns))
-         (filtered-posns-2 (filter(lambda (posn) (and (player-quadrant (car posn) (cdr posn) 1) (= (2d-vector-ref board (car posn) (cdr posn)) 2))) posns)))
-    (if (or (= (length filtered-posns-1) 10) (= (length filtered-posns-2) 10)) #t #f)))
+  #f)
+;(define (is-endgame? board)
+;  (let* ((posns (append* (map (lambda (x) (map (lambda (y) (cons x y)) (range size))) (range size))))
+;         (filtered-posns-1 (filter (lambda (posn) (and (player-quadrant (car posn) (cdr posn) 2) (= (2d-vector-ref board (car posn) (cdr posn)) 1))) posns))
+;         (filtered-posns-2 (filter(lambda (posn) (and (player-quadrant (car posn) (cdr posn) 1) (= (2d-vector-ref board (car posn) (cdr posn)) 2))) posns)))
+;    (if (or (= (length filtered-posns-1) 10) (= (length filtered-posns-2) 10)) #t #f)))
 
-(define board (make-2d-vector size size 0))
-(2d-vector-set! board 0 2 1)
-(2d-vector-set! board 1 1 1)
-(2d-vector-set! board 1 2 1)
-(2d-vector-set! board 2 1 1)
-(2d-vector-set! board 2 2 1)
-(2d-vector-set! board 3 2 2)
-(2d-vector-set! board 3 1 2)
-(2d-vector-set! board 4 2 2)
+             
+;(2d-vector-set! vboard 0 3 1)
+;(2d-vector-set! vboard 1 2 1)
+;(2d-vector-set! vboard 1 3 2)
+;(2d-vector-set! vboard 2 2 1)
+;(2d-vector-set! vboard 2 3 1)
+;(2d-vector-set! vboard 2 4 2)
+;(2d-vector-set! vboard 3 1 0)
+;(2d-vector-set! vboard 3 2 2)
+;(2d-vector-set! vboard 3 3 0)
+;(2d-vector-set! vboard 3 4 0)
+;(2d-vector-set! vboard 4 1 1)
+;(2d-vector-set! vboard 4 2 0)
+;(2d-vector-set! vboard 4 3 1)
+;(2d-vector-set! vboard 5 0 0)
+;(2d-vector-set! vboard 5 1 2)
+;(2d-vector-set! vboard 5 2 0)
+
+(define (occupied-slot? i j board)
+  (> (2d-vector-ref board i j) 0))
+
+(define (empty-slot? i j board)
+  (= (2d-vector-ref board i j) 0))
+
+(define (get-direction-functions i)
+  (if (even? i) (list (cons sub1 sub1)
+                      (cons sub1 identity)
+                      (cons add1 identity)
+                      (cons add1 sub1)
+                      (cons identity sub1)
+                      (cons identity add1))
+                (list (cons sub1 identity)
+                      (cons sub1 add1)
+                      (cons add1 add1)
+                      (cons add1 identity)
+                      (cons identity sub1)
+                      (cons identity add1))))
+
+
+; Returns the list of neighbouring slots starting with the one on top-left in cw order
+; Doesn't check if the slot is out-of-board
+(define (next-neighbour i j)
+  (map (lambda (x) (cons ((car x) i) ((cdr x) j))) (get-direction-functions i)))  
+
+; Returns the list of slots one hop away starting with the one on top-left in cw order
+; Doesn't check if the slot is out-of-board
+(define (second-nearest-neighbour i j)
+  (let* ([f1 (get-direction-functions i)]
+         [f2 (get-direction-functions (+ i 1))])
+  (map (lambda (x) (cons ((cadr x) ((caar x) i)) ((cddr x) ((cdar x) j)))) (zip f1 f2))))
+
+
+(define (zip l1 l2)
+  (if (null? l2) null (cons (cons (car l1) (car l2)) (zip (cdr l1) (cdr l2)))))
+
+(define (possible-hops i j board)
+  (let* ([next-zip-hop (zip (next-neighbour i j) (second-nearest-neighbour i j))])
+    (map (lambda (x) (cdr x)) (filter (lambda (x) (and (>= (cadr x) 0) (>= (cddr x) 0)
+                                                   (< (cadr x) size) (< (cddr x) size)
+                                                   (occupied-slot? (caar x) (cdar x) board)
+                                                   (empty-slot? (cadr x) (cddr x) board))) next-zip-hop))))
+                                                   
+
+
+(define (next-move pos board current-player)
+  (filter (lambda (x) (and (>= (car x) 0) (>= (cdr x) 0) (< (car x) size) (< (cdr x) size)
+                           (empty-slot? (car x) (cdr x) board)))
+          (append (next-neighbour (car pos) (cdr pos)) (walk-through-hop board pos (list pos)))))
+
+(define (walk-through-hop board pos l)
+  (let* ([single-hop (filter (lambda (x) (not (member x l))) (possible-hops (car pos) (cdr pos) board))])
+    (if (null? single-hop) '() (remove-duplicates (append single-hop (append* (map (lambda (x) (walk-through-hop board x (append single-hop l))) single-hop))))))) 
+                           
+
+
+
 
 ;; Evaluate Board Function
   
@@ -60,7 +125,7 @@
    (define required-row (vector-ref board row))
    (define (helper vec i sum)
      (cond [(= i size) sum]
-           [else (cond [(part-of-board? row i board)
+           [else (cond [(part-of-board? row i 1)
                      (if (= (vector-ref vec i) current-player)
                          (helper vec (+ i 1) (+ sum (vertical-distance row i current-player)))
                          (helper vec (+ i 1) sum))]
@@ -94,19 +159,7 @@
       (2d-vector-set! board i2 j2 peg)
       board))
   
-  (define (current-player-pegs board)
-    (define (current-player-helper board row)
-      (define required-row (vector-ref board row))
-      (define (helper vec i acc)
-        (cond [(= i size) acc]
-              [else (cond [(part-of-board? row i board)
-                           (if (= (vector-ref vec i) current-player)
-                               (helper (+ i 1) (cons (cons row i) acc))
-                               (helper (+ i 1) acc))]
-                          [else (helper (+ i 1) acc)])]))
-      (helper required-row 0 null))
-    (foldl (lambda(x y) (append (current-player-helper board x) y)) null (build-list size (lambda(x) x))))
-
+  
   (define best-val
    (cond [(= 1 current-player) -inf.0]
          [(= 2 current-player) +inf.0]))
@@ -133,9 +186,24 @@
                       (minimax-helper2 board (cdr current-positions) val)
                       (minimax-helper2 board (cdr current-positions) init)))]))
 
-  (let* ([current-positions (current-player-pegs board)]
+  (let* ([current-positions (current-player-pegs board current-player)]
          [init (list (cons 0 0) (cons 0 0) best-val)])
     (if (or (= depth 0) (is-endgame? board))
                (list (cons 0 0) (cons 0 0) (evaluate-board board current-player))
                (minimax-helper2 board current-positions init))))
-         
+
+(define (current-player-pegs board current-player)
+    (define (current-player-helper board row)
+      (define required-row (vector-ref board row))
+      (define (helper vec i acc)
+        (cond [(= i size) acc]
+              [else (if (= (vector-ref vec i) current-player)
+                               (helper vec (+ i 1) (cons (cons row i) acc))
+                               (helper vec (+ i 1) acc))]))
+      (helper required-row 0 null))
+    (foldl (lambda(x y) (append (current-player-helper board x) y)) null (build-list size (lambda(x) x))))
+
+
+
+(define (remove-duplicates l)
+  (set->list (list->set l)))
