@@ -15,10 +15,21 @@
 
 
 (define (part-of-board? i j board)
-  #t)
+  (cond
+  [(or (= board 1) (= board 3)) (or (and (< i 17) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
+                                (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))
+      (and (< i 21) (> i 7) (if (= 0 (modulo i 2)) (and (>= j (/ i 2)) (<= (* 2 j) (- 40 i)))
+                                (and (>= j (quotient i 2)) (<= (* 2 j) (- 39 i))))))]
+  [(= board 2) (or (and (< i 12) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
+                                (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))
+                   (and (> i 11) (< i 19) (if (= 0 (modulo i 2)) (and (>= (* 2 j) (+ i 2)) (<= (* 2 j) (- 38 i)))
+                                              (and (>= (* 2 j) (+ i 1)) (<= (* 2 j) (- 37 i))))))]))
 
-(define (is-endgame? board current-player)
-  #f)
+(define (is-endgame? board)
+  (let* ((posns (append* (map (lambda (x) (map (lambda (y) (cons x y)) (range size))) (range size))))
+         (filtered-posns-1 (filter (lambda (posn) (and (player-quadrant (car posn) (cdr posn) 2) (= (2d-vector-ref board (car posn) (cdr posn)) 1))) posns))
+         (filtered-posns-2 (filter(lambda (posn) (and (player-quadrant (car posn) (cdr posn) 1) (= (2d-vector-ref board (car posn) (cdr posn)) 2))) posns)))
+    (if (or (= (length filtered-posns-1) 10) (= (length filtered-posns-2) 10)) #t #f)))
 
              
 ;(2d-vector-set! vboard 0 3 1)
