@@ -179,7 +179,7 @@
         [else state]))
 
 (define (get-random-ai-move current-player)
-  (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (cons x y)) (next-move x vboard 1)))
+  (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (list x y)) (next-move x vboard 1)))
                                    (current-player-pegs vboard current-player))))]
     (list-ref next-moves (random (length next-moves)))))
 
@@ -210,9 +210,9 @@
         [(= state 10) (let* ([ind (get-random-ai-move current-player)])
                         (begin 
                         (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
-                        (set! current-board (place-peg peg-removed current-player (cadr ind) (cddr ind) #t))
+                        (set! current-board (place-peg peg-removed current-player (caadr ind) (cdadr ind) #t))
                         (2d-vector-set! vboard (caar ind) (cdar ind) 0)
-                        (2d-vector-set! vboard (cadr ind) (cddr ind) current-player)
+                        (2d-vector-set! vboard (caadr ind) (cdadr ind) current-player)
                         (set! current-player 2)(if (is-endgame? vboard) 11 5)))]
          [else state]))
 
