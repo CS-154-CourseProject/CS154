@@ -206,8 +206,4 @@
 
 
 (define (remove-duplicates l)
-  (define (dup-remove-helper l ans)
-    (cond [(null? l) ans]
-          [(member (car l) ans) (dup-remove-helper (cdr l) ans)]
-          [else (dup-remove-helper (cdr l) (append ans (list (car l))))]))
-  (dup-remove-helper l '()))
+  (set->list (list->set l)))
