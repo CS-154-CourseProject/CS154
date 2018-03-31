@@ -1,5 +1,6 @@
 #lang racket
 (provide (all-defined-out))
+(require racket/vector)
 
 (define size 30)
 (define board 1)
@@ -52,14 +53,14 @@
   (part-of-board? (car coord) (cdr coord) board))
 (define valid-slots (filter part-board? (cprod (range n) (range n))))
 
-(define vboard (make-2d-vector size size -1))
-(map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) 0)) valid-slots)
-(define (fill-vector-posns i)
-  (if (= i 0) vboard
-      (begin (map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) i))
-                              (filter (lambda (x) (player-posns? i (car x) (cdr x) board)) (cprod (range n) (range n))))
-             (fill-vector-posns (- i 1)))))
-(fill-vector-posns 2)
+;(define vboard (make-2d-vector size size -1))
+;(map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) 0)) valid-slots)
+;(define (fill-vector-posns i)
+;  (if (= i 0) vboard
+;      (begin (map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) i))
+;                              (filter (lambda (x) (player-posns? i (car x) (cdr x) board)) (cprod (range n) (range n))))
+;             (fill-vector-posns (- i 1)))))
+;(fill-vector-posns 2)
 
 ;(define vboard (make-2d-vector size size 0))
 ;(2d-vector-set! vboard 0 3 1)
@@ -169,25 +170,27 @@
 
 ;; Minimax Function
 
+
+
 (define (minimax board current-player depth)
 
   (define (get-opposite-player x)
   (if (= x 1) 2 1))
   
+  (define best-val
+   (cond [(= 1 current-player) -inf.0]
+         [(= 2 current-player) +inf.0]))
+
   (define (make-move board pos1 pos2)
     (let* ([i1 (car pos1)]
            [j1 (cdr pos1)]
            [i2 (car pos2)]
            [j2 (cdr pos2)]
-           [peg (2d-vector-ref board i1 j1)])
-      (2d-vector-set! board i1 j1 0)
-      (2d-vector-set! board i2 j2 peg)
-      board))
-  
-  
-  (define best-val
-   (cond [(= 1 current-player) -inf.0]
-         [(= 2 current-player) +inf.0]))
+           [peg (2d-vector-ref board i1 j1)]
+           [board1 (for/vector ((i size)) (vector-copy (vector-ref board i)))])
+      (2d-vector-set! board1 i1 j1 0)
+      (2d-vector-set! board1 i2 j2 peg)
+      board1))
 
   (define (compare val1 val2)
    (cond [(= 1 current-player) (> (caddr val1) (caddr val2))]
@@ -196,8 +199,8 @@
   (define (minimax-helper1 board pos next-move-list init)
     (cond [(null? next-move-list) init]
           [else (let* ([next-pos (car next-move-list)]
-                      [new-board (make-move board pos next-pos)]
-                      [val (minimax new-board (get-opposite-player current-player) (- depth 1))])
+                       [new-board (make-move board pos next-pos)]
+                       [val (minimax new-board (get-opposite-player current-player) (- depth 1))])
                 (if (compare val init)
                     (minimax-helper1 board pos (cdr next-move-list) (list pos next-pos (caddr val)))
                     (minimax-helper1 board pos (cdr next-move-list) init)))]))
@@ -230,3 +233,5 @@
 
 (define (remove-duplicates l)
   (set->list (list->set l)))
+
+
