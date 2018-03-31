@@ -1,8 +1,6 @@
 #lang racket
-
-;(require "pro.rkt")
-
-(define size 5)
+(provide (all-defined-out))
+(define size 30)
 
 (define (make-2d-vector r c initial)
   (build-vector r (lambda (x) (make-vector c initial))))
@@ -15,24 +13,89 @@
     (begin
       (vector-set! v c val))))
 
+
 (define (part-of-board? i j board)
   #t)
-
-(define (next-move pos board current-player)
-  null)
 
 (define (is-endgame? board current-player)
   #f)
 
-(define board (make-2d-vector size size 0))
-(2d-vector-set! board 0 2 1)
-(2d-vector-set! board 1 1 1)
-(2d-vector-set! board 1 2 1)
-(2d-vector-set! board 2 1 1)
-(2d-vector-set! board 2 2 1)
-(2d-vector-set! board 3 2 2)
-(2d-vector-set! board 3 1 2)
-(2d-vector-set! board 4 2 2)
+             
+;(2d-vector-set! vboard 0 3 1)
+;(2d-vector-set! vboard 1 2 1)
+;(2d-vector-set! vboard 1 3 2)
+;(2d-vector-set! vboard 2 2 1)
+;(2d-vector-set! vboard 2 3 1)
+;(2d-vector-set! vboard 2 4 2)
+;(2d-vector-set! vboard 3 1 0)
+;(2d-vector-set! vboard 3 2 2)
+;(2d-vector-set! vboard 3 3 0)
+;(2d-vector-set! vboard 3 4 0)
+;(2d-vector-set! vboard 4 1 1)
+;(2d-vector-set! vboard 4 2 0)
+;(2d-vector-set! vboard 4 3 1)
+;(2d-vector-set! vboard 5 0 0)
+;(2d-vector-set! vboard 5 1 2)
+;(2d-vector-set! vboard 5 2 0)
+
+(define (occupied-slot? i j board)
+  (> (2d-vector-ref board i j) 0))
+
+(define (empty-slot? i j board)
+  (= (2d-vector-ref board i j) 0))
+
+(define (get-direction-functions i)
+  (if (even? i) (list (cons sub1 sub1)
+                      (cons sub1 identity)
+                      (cons add1 identity)
+                      (cons add1 sub1)
+                      (cons identity sub1)
+                      (cons identity add1))
+                (list (cons sub1 identity)
+                      (cons sub1 add1)
+                      (cons add1 add1)
+                      (cons add1 identity)
+                      (cons identity sub1)
+                      (cons identity add1))))
+
+
+; Returns the list of neighbouring slots starting with the one on top-left in cw order
+; Doesn't check if the slot is out-of-board
+(define (next-neighbour i j)
+  (map (lambda (x) (cons ((car x) i) ((cdr x) j))) (get-direction-functions i)))  
+
+; Returns the list of slots one hop away starting with the one on top-left in cw order
+; Doesn't check if the slot is out-of-board
+(define (second-nearest-neighbour i j)
+  (let* ([f1 (get-direction-functions i)]
+         [f2 (get-direction-functions (+ i 1))])
+  (map (lambda (x) (cons ((cadr x) ((caar x) i)) ((cddr x) ((cdar x) j)))) (zip f1 f2))))
+
+
+(define (zip l1 l2)
+  (if (null? l2) null (cons (cons (car l1) (car l2)) (zip (cdr l1) (cdr l2)))))
+
+(define (possible-hops i j board)
+  (let* ([next-zip-hop (zip (next-neighbour i j) (second-nearest-neighbour i j))])
+    (map (lambda (x) (cdr x)) (filter (lambda (x) (and (>= (cadr x) 0) (>= (cddr x) 0)
+                                                   (< (cadr x) size) (< (cddr x) size)
+                                                   (occupied-slot? (caar x) (cdar x) board)
+                                                   (empty-slot? (cadr x) (cddr x) board))) next-zip-hop))))
+                                                   
+
+
+(define (next-move pos board current-player)
+  (filter (lambda (x) (and (>= (car x) 0) (>= (cdr x) 0) (< (car x) size) (< (cdr x) size)
+                           (empty-slot? (car x) (cdr x) board)))
+          (append (next-neighbour (car pos) (cdr pos)) (walk-through-hop board pos (list pos)))))
+
+(define (walk-through-hop board pos l)
+  (let* ([single-hop (filter (lambda (x) (not (member x l))) (possible-hops (car pos) (cdr pos) board))])
+    (if (null? single-hop) '() (remove-duplicates (append single-hop (append* (map (lambda (x) (walk-through-hop board x (append single-hop l))) single-hop))))))) 
+                           
+
+
+
 
 ;; Evaluate Board Function
   
@@ -127,4 +190,11 @@
     (if (or (= depth 0) (is-endgame? board))
                (list (cons 0 0) (cons 0 0) (evaluate-board board current-player))
                (minimax-helper2 board current-positions init))))
-         
+
+
+(define (remove-duplicates l)
+  (define (dup-remove-helper l ans)
+    (cond [(null? l) ans]
+          [(member (car l) ans) (dup-remove-helper (cdr l) ans)]
+          [else (dup-remove-helper (cdr l) (append ans (list (car l))))]))
+  (dup-remove-helper l '()))
