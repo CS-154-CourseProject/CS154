@@ -125,7 +125,7 @@
    (define required-row (vector-ref board row))
    (define (helper vec i sum)
      (cond [(= i size) sum]
-           [else (cond [(part-of-board? row i board)
+           [else (cond [(part-of-board? row i 1)
                      (if (= (vector-ref vec i) current-player)
                          (helper vec (+ i 1) (+ sum (vertical-distance row i current-player)))
                          (helper vec (+ i 1) sum))]
@@ -174,8 +174,8 @@
                       [new-board (make-move board pos next-pos)]
                       [val (minimax new-board (get-opposite-player current-player) (- depth 1))])
                 (if (compare val init)
-                    (minimax-helper1 pos (cdr next-move-list) (list pos next-pos (caddr val)))
-                    (minimax-helper1 pos (cdr next-move-list) init)))]))
+                    (minimax-helper1 board pos (cdr next-move-list) (list pos next-pos (caddr val)))
+                    (minimax-helper1 board pos (cdr next-move-list) init)))]))
 
   (define (minimax-helper2 board current-positions init)
     (cond [(null? current-positions) init]
@@ -206,8 +206,4 @@
 
 
 (define (remove-duplicates l)
-  (define (dup-remove-helper l ans)
-    (cond [(null? l) ans]
-          [(member (car l) ans) (dup-remove-helper (cdr l) ans)]
-          [else (dup-remove-helper (cdr l) (append ans (list (car l))))]))
-  (dup-remove-helper l '()))
+  (set->list (list->set l)))
