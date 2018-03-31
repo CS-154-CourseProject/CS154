@@ -26,10 +26,12 @@
                                               (and (>= (* 2 j) (+ i 1)) (<= (* 2 j) (- 37 i))))))]))
 
 (define (is-endgame? board)
-  (let* ((posns (append* (map (lambda (x) (map (lambda (y) (cons x y)) (range size))) (range size))))
-         (filtered-posns-1 (filter (lambda (posn) (and (player-quadrant (car posn) (cdr posn) 2) (= (2d-vector-ref board (car posn) (cdr posn)) 1))) posns))
-         (filtered-posns-2 (filter(lambda (posn) (and (player-quadrant (car posn) (cdr posn) 1) (= (2d-vector-ref board (car posn) (cdr posn)) 2))) posns)))
-    (if (or (= (length filtered-posns-1) 10) (= (length filtered-posns-2) 10)) #t #f)))
+  #f)
+;(define (is-endgame? board)
+;  (let* ((posns (append* (map (lambda (x) (map (lambda (y) (cons x y)) (range size))) (range size))))
+;         (filtered-posns-1 (filter (lambda (posn) (and (player-quadrant (car posn) (cdr posn) 2) (= (2d-vector-ref board (car posn) (cdr posn)) 1))) posns))
+;         (filtered-posns-2 (filter(lambda (posn) (and (player-quadrant (car posn) (cdr posn) 1) (= (2d-vector-ref board (car posn) (cdr posn)) 2))) posns)))
+;    (if (or (= (length filtered-posns-1) 10) (= (length filtered-posns-2) 10)) #t #f)))
 
              
 ;(2d-vector-set! vboard 0 3 1)

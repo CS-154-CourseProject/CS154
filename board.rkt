@@ -192,7 +192,7 @@
                   (begin (set! current-board (place-peg peg-removed 2 (caar ind) (cdar ind) #t))
                          (2d-vector-set! vboard (car initial) (cdr initial) 0)
                          (2d-vector-set! vboard (caar ind) (cdar ind) 2) 5)]
-                 [(and (not (null? ind)) (= (2d-vector-ref vboard (caar ind) (cdar ind)) 2)) (handle-button-down 5 x y)]
+                 [(and (not (null? ind)) (= (2d-vector-ref vboard (caar ind) (cdar ind)) 2)) (begin (set! current-board prev-config) (handle-button-down 5 x y))]
                  [else state]))]
          [else state]))
 
