@@ -121,8 +121,8 @@
                       [new-board (make-move board pos next-pos)]
                       [val (minimax new-board (get-opposite-player current-player) (- depth 1))])
                 (if (compare val init)
-                    (minimax-helper1 pos (cdr next-move-list) (list pos next-pos (caddr val)))
-                    (minimax-helper1 pos (cdr next-move-list) init)))]))
+                    (minimax-helper1 board pos (cdr next-move-list) (list pos next-pos (caddr val)))
+                    (minimax-helper1 board pos (cdr next-move-list) init)))]))
 
   (define (minimax-helper2 board current-positions init)
     (cond [(null? current-positions) init]
