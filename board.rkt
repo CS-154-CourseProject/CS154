@@ -168,32 +168,52 @@
 
 (define (create-scene state)
   (cond [(= state 5) current-board]
-        ;[(= state 10)]    AI's move set state to 5
+        ;Replace by result of minimax
+        [(= state 10) 
+                        current-board]
+        [(= state 11) (text "Game Over" 36 "indigo")]
         [else current-board]))
 
 (define (handle-mouse-events state x y event)
   (cond [(mouse=? event "button-down") (handle-button-down state x y)]
         [else state]))
 
+(define (get-random-ai-move current-player)
+  (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (cons x y)) (next-move x vboard 1)))
+                                   (current-player-pegs vboard current-player))))]
+    (list-ref next-moves (random (length next-moves)))))
 
+
+
+(define current-player 2)
 (define (handle-button-down state x y)
   (cond [(= state 5)
           (let* ([ind (get-index-of-clicked x y board)])
-            (if (and (not (null? ind)) (player-posns? 2 (caar ind) (cdar ind) board))
+            (if (and (not (null? ind)) (= 2 (2d-vector-ref vboard (caar ind) (cdar ind))))
                 (begin (set! prev-config current-board)
-                       (let* ([next (next-move (car ind) vboard 2)])
+                       (let* ([next (next-move (car ind) vboard current-player)])
                          (set! initial (car ind))
                          (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
-                         (set! current-board (place-images (make-list (length next) (next-pegs-player 2 board)) (map ind->posns next) current-board))
+                         (set! current-board (place-images (make-list (length next) (next-pegs-player current-player board)) (map ind->posns next) current-board))
                          (set! next-list next)) 6) 5))]
         [(= state 6) 
          (let* ([ind (get-index-of-clicked x y board)])
            (cond [(and (not (null? ind)) (member (car ind) next-list))
-                  (begin (set! current-board (place-peg peg-removed 2 (caar ind) (cdar ind) #t))
+                  (begin (set! current-board (place-peg peg-removed current-player (caar ind) (cdar ind) #t))
                          (2d-vector-set! vboard (car initial) (cdr initial) 0)
-                         (2d-vector-set! vboard (caar ind) (cdar ind) 2) 5)]
-                 [(and (not (null? ind)) (= (2d-vector-ref vboard (caar ind) (cdar ind)) 2)) (begin (set! current-board prev-config) (handle-button-down 5 x y))]
+                         (2d-vector-set! vboard (caar ind) (cdar ind) current-player)
+                         (set! current-player 1)
+                         (if (is-endgame? vboard) 11 10))]
+                 [(and (not (null? ind)) (= (2d-vector-ref vboard (caar ind) (cdar ind)) current-player)) (begin (set! current-board prev-config)
+                                                                                                                 (handle-button-down 5 x y))]
                  [else state]))]
+        [(= state 10) (let* ([ind (get-random-ai-move current-player)])
+                        (begin 
+                        (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
+                        (set! current-board (place-peg peg-removed current-player (cadr ind) (cddr ind) #t))
+                        (2d-vector-set! vboard (caar ind) (cdar ind) 0)
+                        (2d-vector-set! vboard (cadr ind) (cddr ind) current-player)
+                        (set! current-player 2)(if (is-endgame? vboard) 11 5)))]
          [else state]))
 
 ; State: (state_number time i j start-i start-j)

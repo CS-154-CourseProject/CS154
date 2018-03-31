@@ -159,19 +159,7 @@
       (2d-vector-set! board i2 j2 peg)
       board))
   
-  (define (current-player-pegs board)
-    (define (current-player-helper board row)
-      (define required-row (vector-ref board row))
-      (define (helper vec i acc)
-        (cond [(= i size) acc]
-              [else (cond [(part-of-board? row i board)
-                           (if (= (vector-ref vec i) current-player)
-                               (helper (+ i 1) (cons (cons row i) acc))
-                               (helper (+ i 1) acc))]
-                          [else (helper (+ i 1) acc)])]))
-      (helper required-row 0 null))
-    (foldl (lambda(x y) (append (current-player-helper board x) y)) null (build-list size (lambda(x) x))))
-
+  
   (define best-val
    (cond [(= 1 current-player) -inf.0]
          [(= 2 current-player) +inf.0]))
@@ -198,11 +186,23 @@
                       (minimax-helper2 board (cdr current-positions) val)
                       (minimax-helper2 board (cdr current-positions) init)))]))
 
-  (let* ([current-positions (current-player-pegs board)]
+  (let* ([current-positions (current-player-pegs board current-player)]
          [init (list (cons 0 0) (cons 0 0) best-val)])
     (if (or (= depth 0) (is-endgame? board))
                (list (cons 0 0) (cons 0 0) (evaluate-board board current-player))
                (minimax-helper2 board current-positions init))))
+
+(define (current-player-pegs board current-player)
+    (define (current-player-helper board row)
+      (define required-row (vector-ref board row))
+      (define (helper vec i acc)
+        (cond [(= i size) acc]
+              [else (if (= (vector-ref vec i) current-player)
+                               (helper vec (+ i 1) (cons (cons row i) acc))
+                               (helper vec (+ i 1) acc))]))
+      (helper required-row 0 null))
+    (foldl (lambda(x y) (append (current-player-helper board x) y)) null (build-list size (lambda(x) x))))
+
 
 
 (define (remove-duplicates l)
