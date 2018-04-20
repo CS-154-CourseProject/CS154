@@ -1,6 +1,9 @@
 #lang racket
 (provide (all-defined-out))
+(require racket/vector)
+
 (define size 30)
+(define n 30)
 
 (define (make-2d-vector r c initial)
   (build-vector r (lambda (x) (make-vector c initial))))
@@ -13,43 +16,68 @@
     (begin
       (vector-set! v c val))))
 
+(define (player-posns? player i j board)
+  (cond [(or (= board 1) (= board 3))
+         (cond [(= player 1) (and (< i 8) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
+                                (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))]
+               [(= player 2)  (and (< i 21) (> i 16) (if (= 0 (modulo i 2)) (and (>= j (/ i 2)) (<= (* 2 j) (- 40 i)))
+                                (and (>= j (quotient i 2)) (<= (* 2 j) (- 39 i)))))])]
+        [(= board 2)
+         (cond [(= player 1) (and (< i 8) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
+                                (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))]
+               [(= player 2) (and (> i 14) (< i 19) (if (= 0 (modulo i 2)) (and (>= (* 2 j) (+ i 2)) (<= (* 2 j) (- 38 i)))
+                                              (and (>= (* 2 j) (+ i 1)) (<= (* 2 j) (- 37 i)))))])]))
 
 (define (part-of-board? i j board)
   (cond
   [(or (= board 1) (= board 3)) (or (and (< i 17) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
                                 (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))
-      (and (< i 21) (> i 7) (if (= 0 (modulo i 2)) (and (>= j (/ i 2)) (<= (* 2 j) (- 40 i)))
+     (and (< i 21) (> i 7) (if (= 0 (modulo i 2)) (and (>= j (/ i 2)) (<= (* 2 j) (- 40 i)))
                                 (and (>= j (quotient i 2)) (<= (* 2 j) (- 39 i))))))]
   [(= board 2) (or (and (< i 12) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
                                 (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))
                    (and (> i 11) (< i 19) (if (= 0 (modulo i 2)) (and (>= (* 2 j) (+ i 2)) (<= (* 2 j) (- 38 i)))
                                               (and (>= (* 2 j) (+ i 1)) (<= (* 2 j) (- 37 i))))))]))
 
-(define (is-endgame? board)
-  #f)
-;(define (is-endgame? board)
-;  (let* ((posns (append* (map (lambda (x) (map (lambda (y) (cons x y)) (range size))) (range size))))
-;         (filtered-posns-1 (filter (lambda (posn) (and (player-quadrant (car posn) (cdr posn) 2) (= (2d-vector-ref board (car posn) (cdr posn)) 1))) posns))
-;         (filtered-posns-2 (filter(lambda (posn) (and (player-quadrant (car posn) (cdr posn) 1) (= (2d-vector-ref board (car posn) (cdr posn)) 2))) posns)))
-;    (if (or (= (length filtered-posns-1) 10) (= (length filtered-posns-2) 10)) #t #f)))
 
-             
+(define (is-endgame? board)
+  (let* ((posns (append* (map (lambda (x) (map (lambda (y) (cons x y)) (range size))) (range size))))
+         (filtered-posns-1 (filter (lambda (posn) (and (player-posns? 2 (car posn) (cdr posn) 1) (= (2d-vector-ref board (car posn) (cdr posn)) 1))) posns))
+         (filtered-posns-2 (filter(lambda (posn) (and (player-posns? 1 (car posn) (cdr posn) 1) (= (2d-vector-ref board (car posn) (cdr posn)) 2))) posns)))
+    (if (or (= (length filtered-posns-1) 10) (= (length filtered-posns-2) 10)) #t #f)))
+
+(define (cprod l1 l2)
+  (append* (map (lambda (y) (map (lambda (x) (cons y x)) l2)) l1)))
+(define (part-board? coord)
+  (part-of-board? (car coord) (cdr coord) board))
+(define valid-slots (filter part-board? (cprod (range n) (range n))))
+
+;(define vboard (make-2d-vector size size -1))
+;(map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) 0)) valid-slots)
+;(define (fill-vector-posns i)
+;  (if (= i 0) vboard
+;      (begin (map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) i))
+;                              (filter (lambda (x) (player-posns? i (car x) (cdr x) board)) (cprod (range n) (range n))))
+;             (fill-vector-posns (- i 1)))))
+;(fill-vector-posns 2)
+
+;(define vboard (make-2d-vector size size 0))
 ;(2d-vector-set! vboard 0 3 1)
-;(2d-vector-set! vboard 1 2 1)
-;(2d-vector-set! vboard 1 3 2)
-;(2d-vector-set! vboard 2 2 1)
-;(2d-vector-set! vboard 2 3 1)
-;(2d-vector-set! vboard 2 4 2)
-;(2d-vector-set! vboard 3 1 0)
-;(2d-vector-set! vboard 3 2 2)
-;(2d-vector-set! vboard 3 3 0)
-;(2d-vector-set! vboard 3 4 0)
-;(2d-vector-set! vboard 4 1 1)
-;(2d-vector-set! vboard 4 2 0)
-;(2d-vector-set! vboard 4 3 1)
-;(2d-vector-set! vboard 5 0 0)
-;(2d-vector-set! vboard 5 1 2)
-;(2d-vector-set! vboard 5 2 0)
+; (2d-vector-set! vboard 1 2 1)
+; (2d-vector-set! vboard 1 3 2)
+; (2d-vector-set! vboard 2 2 1)
+; (2d-vector-set! vboard 2 3 1)
+; (2d-vector-set! vboard 2 4 2)
+; (2d-vector-set! vboard 3 1 0)
+; (2d-vector-set! vboard 3 2 2)
+; (2d-vector-set! vboard 3 3 0)
+; (2d-vector-set! vboard 3 4 0)
+; (2d-vector-set! vboard 4 1 1)
+; (2d-vector-set! vboard 4 2 0)
+; (2d-vector-set! vboard 4 3 1)
+; (2d-vector-set! vboard 5 0 0)
+; (2d-vector-set! vboard 5 1 2)
+; (2d-vector-set! vboard 5 2 0)
 
 (define (occupied-slot? i j board)
   (> (2d-vector-ref board i j) 0))
@@ -98,16 +126,13 @@
 
 
 (define (next-move pos board current-player)
-  (filter (lambda (x) (and (>= (car x) 0) (>= (cdr x) 0) (< (car x) size) (< (cdr x) size)
-                           (empty-slot? (car x) (cdr x) board)))
-          (append (next-neighbour (car pos) (cdr pos)) (walk-through-hop board pos (list pos)))))
+  (filter (lambda (x) (and (>= (caar x) 0) (>= (cdar x) 0) (< (caar x) size) (< (cdar x) size)
+                           (empty-slot? (caar x) (cdar x) board)))
+          (append (map list (next-neighbour (car pos) (cdr pos))) (walk-through-hop board pos (list pos) '()))))
 
-(define (walk-through-hop board pos l)
+(define (walk-through-hop board pos l path)
   (let* ([single-hop (filter (lambda (x) (not (member x l))) (possible-hops (car pos) (cdr pos) board))])
-    (if (null? single-hop) '() (remove-duplicates (append single-hop (append* (map (lambda (x) (walk-through-hop board x (append single-hop l))) single-hop))))))) 
-                           
-
-
+    (if (null? single-hop) '() (remove-duplicates (append (map (lambda (x) (cons x path)) single-hop) (append* (map (lambda (x) (walk-through-hop board x (append single-hop l) (cons x path))) single-hop))))))) 
 
 
 ;; Evaluate Board Function
@@ -144,25 +169,27 @@
 
 ;; Minimax Function
 
+
+
 (define (minimax board current-player depth)
 
   (define (get-opposite-player x)
   (if (= x 1) 2 1))
   
+  (define best-val
+   (cond [(= 1 current-player) -inf.0]
+         [(= 2 current-player) +inf.0]))
+
   (define (make-move board pos1 pos2)
     (let* ([i1 (car pos1)]
            [j1 (cdr pos1)]
            [i2 (car pos2)]
            [j2 (cdr pos2)]
-           [peg (2d-vector-ref board i1 j1)])
-      (2d-vector-set! board i1 j1 0)
-      (2d-vector-set! board i2 j2 peg)
-      board))
-  
-  
-  (define best-val
-   (cond [(= 1 current-player) -inf.0]
-         [(= 2 current-player) +inf.0]))
+           [peg (2d-vector-ref board i1 j1)]
+           [board1 (for/vector ((i size)) (vector-copy (vector-ref board i)))])
+      (2d-vector-set! board1 i1 j1 0)
+      (2d-vector-set! board1 i2 j2 peg)
+      board1))
 
   (define (compare val1 val2)
    (cond [(= 1 current-player) (> (caddr val1) (caddr val2))]
@@ -170,9 +197,9 @@
                          
   (define (minimax-helper1 board pos next-move-list init)
     (cond [(null? next-move-list) init]
-          [else (let* ([next-pos (car next-move-list)]
-                      [new-board (make-move board pos next-pos)]
-                      [val (minimax new-board (get-opposite-player current-player) (- depth 1))])
+          [else (let* ([next-pos (caar next-move-list)]
+                       [new-board (make-move board pos next-pos)]
+                       [val (minimax new-board (get-opposite-player current-player) (- depth 1))])
                 (if (compare val init)
                     (minimax-helper1 board pos (cdr next-move-list) (list pos next-pos (caddr val)))
                     (minimax-helper1 board pos (cdr next-move-list) init)))]))
@@ -203,7 +230,3 @@
       (helper required-row 0 null))
     (foldl (lambda(x y) (append (current-player-helper board x) y)) null (build-list size (lambda(x) x))))
 
-
-
-(define (remove-duplicates l)
-  (set->list (list->set l)))

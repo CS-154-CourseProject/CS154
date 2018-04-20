@@ -11,8 +11,8 @@
 (define player-next-colors (list 'LightPink 'GreenYellow 'Gold 'SkyBlue 'DarkGray))
 (define pegs-per-player 10)
 (define slot-radius 9)
-(define board 1)
-(define theta-of-unit (if (or (= board 2) (= board 3)) 90 60)) 
+(define board 2)
+(define theta-of-unit (if (or (= board 2) (= board 3)) 90 60))
                           
 (define unit1
   (cond
@@ -110,6 +110,11 @@
 
 
 
+(define select-mode-scene (place-images (list (overlay/align "center" "center" (text "Player1 vs Player2" 20 "indigo") (rectangle 200 50 "outline" "black"))
+                      (overlay/align "center" "center" (text "Player vs Computer" 20 "indigo") (rectangle 200 50 "outline" "black")))
+                (list (make-posn 250 300) (make-posn 550 300))
+                (empty-scene 800 600)))
+(define mode 0)
 
 (define initial-board (place-initial-pegs n-players empty-board))
 
@@ -122,6 +127,7 @@
 ; State7: if drag, move peg with mouse: if button-up: if valid next possible slot put it there >  state8, else place it in orig pos > state5
 ; State8: Game Over-> state15, else state10
 ; State10: AI's Turn : get best move from minimax, with time move/animate from current pos to 
+
 
 (define peg-removed initial-board)
 (define current-board initial-board)
@@ -166,58 +172,92 @@
 
 (define initial (cons 0 0))
 
+(define move-path '())
+
+(struct display-state (n time) #:transparent)
+
+
 (define (create-scene state)
-  (cond [(= state 5) current-board]
-        ;Replace by result of minimax
-        [(= state 10) 
-                        current-board]
-        [(= state 11) (text "Game Over" 36 "indigo")]
-        [else current-board]))
+  (cond
+    [(= (display-state-n state) 4) select-mode-scene]
+    [(= (display-state-n state) 11) (text "Game Over" 36 "indigo")]
+    [else current-board]))
 
 (define (handle-mouse-events state x y event)
   (cond [(mouse=? event "button-down") (handle-button-down state x y)]
         [else state]))
 
-(define (get-random-ai-move current-player)
-  (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (list x y)) (next-move x vboard 1)))
-                                   (current-player-pegs vboard current-player))))]
-    (list-ref next-moves (random (length next-moves)))))
+;(define (get-random-ai-move current-player)
+;  (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (list x y)) (next-move x vboard 1)))
+;                                   (current-player-pegs vboard current-player))))]
+;    (list-ref next-moves (random (length next-moves)))))
 
+(define (get-minimax-ai-move current-player)
+  (let* ((mv (minimax vboard current-player 2))
+         (path (assoc (cadr mv) (next-move (car mv) vboard current-player))))
+    (list (car mv) path)))
 
 
 (define current-player 2)
 (define (handle-button-down state x y)
-  (cond [(= state 5)
+  (cond
+    [(= (display-state-n state) 4)
+     (cond [(and (>= x 150) (<= x 350) (>= y 275) (<= y 325))
+            (begin (set! mode 1) (set! current-player 2) (display-state 5 (display-state-time state)))]
+           [(and (>= x 450) (<= x 650) (>= y 275) (<= y 325))
+            (begin (set! mode 2) (set! current-player 2) (display-state 5 (display-state-time state)))]
+           [else state])]
+    [(= (display-state-n state) 5)
           (let* ([ind (get-index-of-clicked x y board)])
-            (if (and (not (null? ind)) (= 2 (2d-vector-ref vboard (caar ind) (cdar ind))))
+            (if (and (not (null? ind)) (= current-player (2d-vector-ref vboard (caar ind) (cdar ind))))
                 (begin (set! prev-config current-board)
                        (let* ([next (next-move (car ind) vboard current-player)])
                          (set! initial (car ind))
                          (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
-                         (set! current-board (place-images (make-list (length next) (next-pegs-player current-player board)) (map ind->posns next) current-board))
-                         (set! next-list next)) 6) 5))]
-        [(= state 6) 
+                         (set! current-board (place-images (make-list (length next) (next-pegs-player current-player board)) (map (lambda (x) (ind->posns(car x))) next) current-board))
+                         (set! next-list next)) (display-state 6 (display-state-time state))) (display-state 5 (display-state-time state))))]
+        [(= (display-state-n state) 6) 
          (let* ([ind (get-index-of-clicked x y board)])
-           (cond [(and (not (null? ind)) (member (car ind) next-list))
-                  (begin (set! current-board (place-peg peg-removed current-player (caar ind) (cdar ind) #t))
-                         (2d-vector-set! vboard (car initial) (cdr initial) 0)
-                         (2d-vector-set! vboard (caar ind) (cdar ind) current-player)
-                         (set! current-player 1)
-                         (if (is-endgame? vboard) 11 10))]
+           
+           (cond [(and (not (null? ind)) (member (car ind) (map car next-list)))
+                  (begin
+                    (2d-vector-set! vboard (car initial) (cdr initial) 0)
+                    (2d-vector-set! vboard (caar ind) (cdar ind) current-player)
+             
+                    (set! move-path (reverse (assoc (car ind) next-list)))
+                    (display-state 7 (display-state-time state)))]
+                 
                  [(and (not (null? ind)) (= (2d-vector-ref vboard (caar ind) (cdar ind)) current-player)) (begin (set! current-board prev-config)
-                                                                                                                 (handle-button-down 5 x y))]
+                                                                                                                 (handle-button-down (display-state 5 (display-state-time state)) x y))]
                  [else state]))]
-        [(= state 10) (let* ([ind (get-random-ai-move current-player)])
-                        (begin 
-                        (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
-                        (set! current-board (place-peg peg-removed current-player (caadr ind) (cdadr ind) #t))
-                        (2d-vector-set! vboard (caar ind) (cdar ind) 0)
-                        (2d-vector-set! vboard (caadr ind) (cdadr ind) current-player)
-                        (set! current-player 2)(if (is-endgame? vboard) 11 5)))]
-         [else state]))
+       [else state]))
 
-; State: (state_number time i j start-i start-j)
-(big-bang 5
-          (on-tick identity)
+
+(define (handle-tick state)
+  
+  (cond
+    [(or (= (display-state-n state) 7) (= (display-state-n state) 9))
+     
+     (cond [(null? move-path)
+           (begin 
+             (set! current-player (if (= current-player n-players) 1 (+ 1 current-player)))  
+             (if (is-endgame? vboard) (display-state 11 (display-state-time state)) (display-state (if (= (display-state-n state) 7) (if (= mode 2) 8 5) 5) (display-state-time state))))]
+           [else 
+            (begin
+                   (set! current-board (place-peg peg-removed current-player (caar move-path) (cdar move-path) vboard))
+                   (set! peg-removed (remove-peg current-board (caar move-path) (cdar move-path)))
+                   (set! move-path (cdr move-path))
+                   (display-state (display-state-n state) (add1 (display-state-time state))))])]
+    [(= (display-state-n state) 8) (let* ([ind (get-minimax-ai-move current-player)])
+                        (begin
+                        (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
+                        (2d-vector-set! vboard (caar ind) (cdar ind) 0)
+                        (2d-vector-set! vboard (caaadr ind) (cdaadr ind) current-player)
+                        (set! move-path (reverse (cadr ind)))
+                        (display-state 9 (add1 (display-state-time state)))))]
+    [else (display-state (display-state-n state) (add1 (display-state-time state)))]))
+
+(big-bang (display-state 4 0)
+          (on-tick handle-tick)
           (on-mouse handle-mouse-events) 
           (to-draw create-scene))
