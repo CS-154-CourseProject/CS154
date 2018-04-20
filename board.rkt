@@ -13,7 +13,7 @@
 (define slot-radius 9)
 (define board 1)
 (define theta-of-unit (if (or (= board 2) (= board 3)) 90 60)) 
-                          
+
 (define unit1
   (cond
    [(= board 1) (overlay (circle slot-radius "solid" "gray") (rhombus unit-size theta-of-unit "solid" "white"))]
