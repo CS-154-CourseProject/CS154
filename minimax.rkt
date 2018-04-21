@@ -113,7 +113,6 @@
          [f2 (get-direction-functions (+ i 1))])
   (map (lambda (x) (cons ((cadr x) ((caar x) i)) ((cddr x) ((cdar x) j)))) (zip f1 f2))))
 
-
 (define (zip l1 l2)
   (if (null? l2) null (cons (cons (car l1) (car l2)) (zip (cdr l1) (cdr l2)))))
 
@@ -124,8 +123,6 @@
                                                    (occupied-slot? (caar x) (cdar x) board)
                                                    (empty-slot? (cadr x) (cddr x) board))) next-zip-hop))))
                                                    
-
-
 (define (next-move pos board current-player)
   (filter (lambda (x) (and (>= (car x) 0) (>= (cdr x) 0) (< (car x) size) (< (cdr x) size)
                            (empty-slot? (car x) (cdr x) board)))
@@ -167,10 +164,9 @@
     (foldl (lambda(x y) (+ y (heuristic-helper x opposite-player))) 0 (build-list size (lambda(x) x))))
 
   (- Total-self Total-opponent))
+  
 
 ;; Minimax Function
-
-
 
 (define (minimax board current-player depth)
 
