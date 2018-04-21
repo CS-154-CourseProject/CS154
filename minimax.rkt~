@@ -52,6 +52,7 @@
 (define (part-board? coord)
   (part-of-board? (car coord) (cdr coord) board))
 (define valid-slots (filter part-board? (cprod (range n) (range n))))
+<<<<<<< HEAD
 
 ;(define vboard (make-2d-vector size size -1))
 ;(map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) 0)) valid-slots)
@@ -79,6 +80,8 @@
 ; (2d-vector-set! vboard 5 0 0)
 ; (2d-vector-set! vboard 5 1 2)
 ; (2d-vector-set! vboard 5 2 0)
+=======
+>>>>>>> 38b542af64f22c19ed46b74131511b0eb45a4414
 
 (define (occupied-slot? i j board)
   (> (2d-vector-ref board i j) 0))

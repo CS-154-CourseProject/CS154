@@ -193,10 +193,9 @@
 ;    (list-ref next-moves (random (length next-moves)))))
 
 (define (get-minimax-ai-move current-player)
-  (let* ((mv (minimax vboard current-player 2))
-         (path (assoc (cadr mv) (next-move (car mv) vboard current-player))))
+  (let* ([mv (minimax vboard current-player current-player 2 board)]
+         [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
     (list (car mv) path)))
-
 
 
 (define current-player 2)
@@ -242,7 +241,8 @@
      (cond [(null? move-path)
            (begin 
              (set! current-player (if (= current-player n-players) 1 (+ 1 current-player)))  
-             (if (is-endgame? vboard) (display-state 11 (display-state-time state)) (display-state (if (= (display-state-n state) 7) (if (= mode 2) 8 5) 5) (display-state-time state))))]
+             (if (or (is-endgame? current-player vboard)
+                     (is-endgame? (get-opposite-player current-player) vboard)) (display-state 11 (display-state-time state)) (display-state (if (= (display-state-n state) 7) (if (= mode 2) 8 5) 5) (display-state-time state))))]
            [else 
             (begin
                    (set! current-board (place-peg peg-removed current-player (caar move-path) (cdar move-path) vboard))

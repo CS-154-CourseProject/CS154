@@ -191,12 +191,18 @@
 ;  (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (list x y)) (next-move x vboard 1)))
 ;                                   (current-player-pegs vboard current-player))))]
 ;    (list-ref next-moves (random (length next-moves)))))
+<<<<<<< HEAD
 
 (define (get-minimax-ai-move current-player)
   (let* ((mv (minimax vboard current-player 2))
          (path (assoc (cadr mv) (next-move (car mv) vboard current-player))))
     (list (car mv) path)))
+=======
+>>>>>>> 38b542af64f22c19ed46b74131511b0eb45a4414
 
+(define (get-random-ai-move current-player)
+  (let* ((mv (minimax vboard current-player 2)))
+    (list (car mv) (cadr mv))))
 
 
 (define current-player 2)
