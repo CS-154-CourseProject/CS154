@@ -110,13 +110,13 @@
 
 
 (define (next-move pos board current-player)
-  (filter (lambda (x) (and (>= (car x) 0) (>= (cdr x) 0) (< (car x) size) (< (cdr x) size)
-                           (empty-slot? (car x) (cdr x) board)))
-          (append (next-neighbour (car pos) (cdr pos)) (walk-through-hop board pos (list pos)))))
+  (filter (lambda (x) (and (>= (caar x) 0) (>= (cdar x) 0) (< (caar x) size) (< (cdar x) size)
+                           (empty-slot? (caar x) (cdar x) board)))
+          (append (map list (next-neighbour (car pos) (cdr pos))) (walk-through-hop board pos (list pos) '()))))
 
-(define (walk-through-hop board pos l)
+(define (walk-through-hop board pos l path)
   (let* ([single-hop (filter (lambda (x) (not (member x l))) (possible-hops (car pos) (cdr pos) board))])
-    (if (null? single-hop) '() (remove-duplicates (append single-hop (append* (map (lambda (x) (walk-through-hop board x (append single-hop l))) single-hop))))))) 
+    (if (null? single-hop) '() (remove-duplicates (append (map (lambda (x) (cons x path)) single-hop) (append* (map (lambda (x) (walk-through-hop board x (append single-hop l) (cons x path))) single-hop))))))) 
 
 
 ;; Evaluate Board Function
@@ -127,7 +127,7 @@
   (if (= x 1) 2 1))
 
  (define (score-evaluater row column current-player)
-   (define wv 30)
+   (define wv 2)
      ;(cond [(< row 10) 5]
      ;      [(< row 20) 0.75]
      ;      [else 0.6]))
@@ -141,7 +141,7 @@
            [(= 2 current-player) (- (- size 1) row)]))
    
    (define (horizontal-distance)
-     (let* ((centre (/ (- size 1) 2))
+     (let* ((centre 11)
             (score (- centre (abs (- centre column)))))
        score))
    
@@ -158,11 +158,11 @@
                                           (or (= column (quotient row 2))
                                               (= (* 2 column) (- 39 row)))))]))
      (+ (* wv (vertical-distance)) (horizontal-distance)))
-   ;(let ((n-score (+ (* wv (vertical-distance)) (* wh (horizontal-distance)))))
-     ;(cond [(player-posns? (get-opposite-player current-player) row column 1)
-     ;       (if (is-edge?) (+ n-score 3) n-score)]
+   ;(vertical-distance))
+  ; (let ((n-score (+ (* wv (vertical-distance)) (horizontal-distance))))
+   ;  (cond [(player-posns? (get-opposite-player current-player) row column 1)
+    ;        (if (is-edge?) (+ n-score 3) n-score)]
      ;      [else n-score])))
-     ;(n-score)))
  
   
  (define (heuristic-helper row current-player) ;Takes a row and current player and returns the sum 
@@ -214,7 +214,7 @@
                          
   (define (minimax-helper1 board pos next-move-list init)
     (cond [(null? next-move-list) init]
-          [else (let* ([next-pos (car next-move-list)]
+          [else (let* ([next-pos (caar next-move-list)]
                        [new-board (make-move board pos next-pos)]
                        [val (minimax new-board (get-opposite-player current-player) (- depth 1))])
                 (if (compare val init)
@@ -247,8 +247,4 @@
                                (helper vec (+ i 1) acc))]))
       (helper required-row 0 null))
     (foldl (lambda(x y) (append (current-player-helper board x) y)) null (build-list size (lambda(x) x))))
-
-(define (remove-duplicates l)
-  (set->list (list->set l)))
-
 
