@@ -124,13 +124,13 @@
                                                    (empty-slot? (cadr x) (cddr x) board))) next-zip-hop))))
                                                    
 (define (next-move pos board current-player)
-  (filter (lambda (x) (and (>= (car x) 0) (>= (cdr x) 0) (< (car x) size) (< (cdr x) size)
-                           (empty-slot? (car x) (cdr x) board)))
-          (append (next-neighbour (car pos) (cdr pos)) (walk-through-hop board pos (list pos)))))
+  (filter (lambda (x) (and (>= (caar x) 0) (>= (cdar x) 0) (< (caar x) size) (< (cdar x) size)
+                           (empty-slot? (caar x) (cdar x) board)))
+          (append (map list (next-neighbour (car pos) (cdr pos))) (walk-through-hop board pos (list pos) '()))))
 
-(define (walk-through-hop board pos l)
+(define (walk-through-hop board pos l path)
   (let* ([single-hop (filter (lambda (x) (not (member x l))) (possible-hops (car pos) (cdr pos) board))])
-    (if (null? single-hop) '() (remove-duplicates (append single-hop (append* (map (lambda (x) (walk-through-hop board x (append single-hop l))) single-hop))))))) 
+    (if (null? single-hop) '() (remove-duplicates (append (map (lambda (x) (cons x path)) single-hop) (append* (map (lambda (x) (walk-through-hop board x (append single-hop l) (cons x path))) single-hop))))))) 
 
 
 ;; Evaluate Board Function
@@ -194,7 +194,7 @@
                          
   (define (minimax-helper1 board pos next-move-list init)
     (cond [(null? next-move-list) init]
-          [else (let* ([next-pos (car next-move-list)]
+          [else (let* ([next-pos (caar next-move-list)]
                        [new-board (make-move board pos next-pos)]
                        [val (minimax new-board (get-opposite-player current-player) (- depth 1))])
                 (if (compare val init)
@@ -226,8 +226,4 @@
                                (helper vec (+ i 1) acc))]))
       (helper required-row 0 null))
     (foldl (lambda(x y) (append (current-player-helper board x) y)) null (build-list size (lambda(x) x))))
-
-(define (remove-duplicates l)
-  (set->list (list->set l)))
-
 
