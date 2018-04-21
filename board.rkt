@@ -11,7 +11,7 @@
 (define player-next-colors (list 'LightPink 'GreenYellow 'Gold 'SkyBlue 'DarkGray))
 (define pegs-per-player 10)
 (define slot-radius 9)
-(define board 2)
+(define board 1)
 (define theta-of-unit (if (or (= board 2) (= board 3)) 90 60))
                           
 (define unit1
