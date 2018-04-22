@@ -110,11 +110,9 @@
 
 
 
-(define select-mode-scene (place-images (list
-                                         (overlay/align "center" "center" (text "Player1 vs Player2" 20 "indigo") (rectangle 200 50 "outline" "black"))
-                                         (overlay/align "center" "center" (text "Player vs Computer" 20 "indigo") (rectangle 200 50 "outline" "black"))
-                                         (overlay/align "center" "center" (text "Minimax AI vs Random AI Simulation" 20 "indigo") (rectangle 450 50 "outline" "black")))
-                (list (make-posn 250 300) (make-posn 550 300) (make-posn 400 375))
+(define select-mode-scene (place-images (list (overlay/align "center" "center" (text "Player1 vs Player2" 20 "indigo") (rectangle 200 50 "outline" "black"))
+                      (overlay/align "center" "center" (text "Player vs Computer" 20 "indigo") (rectangle 200 50 "outline" "black")))
+                (list (make-posn 250 300) (make-posn 550 300))
                 (empty-scene 800 600)))
 (define mode 0)
 
@@ -172,74 +170,43 @@
 (fill-vector-posns 2)
 
 
-(define end-scene (place-images (list
-                                         (overlay/align "center" "center" (text "Game Ends" 20 "indigo") (rectangle 200 50 "outline" "white"))
-                                         (overlay/align "center" "center" (text "Play Again" 20 "indigo") (rectangle 150 50 "outline" "black"))
-                                         (overlay/align "center" "center" (text "Exit" 20 "indigo") (rectangle 150 50 "outline" "black")))
-                (list (make-posn 400 150) (make-posn 250 350) (make-posn 550 350))
-                (empty-scene 800 600)))
-
 (define initial (cons 0 0))
 
 (define move-path '())
 
 (struct display-state (n time) #:transparent)
-(define current-player 2)
+
 
 (define (create-scene state)
   (cond
     [(= (display-state-n state) 4) select-mode-scene]
-    [(= (display-state-n state) 11)
-     (place-image (overlay/align "center" "center"
-                                 (cond [(= mode 2) (if (= current-player 1) (text "Computer wins. You lose! :(" 20 "red")
-                                                                               (text "You win :)" 20 "green"))]
-                                       [(= mode 1) (if (= current-player 2) (text "Green wins" 20 "green")
-                                                                               (text "Red wins" 20 "red"))]
-                                       [(= mode 3) (if (= current-player 2) (text "Random AI wins" 20 "green")
-                                                                               (text "Minimax AI wins" 20 "red"))]
-                                       [else (text "!" 20 "red")])
-                                 (rectangle 200 50 "solid" "white")) 400 250 end-scene)] 
-    [else (place-image (overlay/align "center" "center" (cond [(= mode 2) (if (= current-player 1) (text "Computer's turn. Please wait!" 20 "red")
-                                                                               (text "Your turn" 20 "green"))]
-                                                              [(= mode 1) (if (= current-player 2) (text "Green's turn" 20 "green")
-                                                                               (text "Red's turn" 20 "red"))]
-                                                              [(= mode 3) (if (= current-player 2) (text "Random AI move" 20 "green")
-                                                                               (text "Minimax AI move" 20 "red"))])
-                                                   (rectangle 100 40 "outline" "white")) 350 60 current-board)]))
+    [(= (display-state-n state) 11) (text "Game Over" 36 "indigo")]
+    [else current-board]))
 
 (define (handle-mouse-events state x y event)
   (cond [(mouse=? event "button-down") (handle-button-down state x y)]
         [else state]))
 
-(define (get-random-ai-move current-player)
-  (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (list x y)) (next-move x vboard 1)))
-                                   (current-player-pegs vboard current-player board))))]
-    (list-ref next-moves (random (length next-moves)))))
+;(define (get-random-ai-move current-player)
+;  (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (list x y)) (next-move x vboard 1)))
+;                                   (current-player-pegs vboard current-player))))]
+;    (list-ref next-moves (random (length next-moves)))))
 
 (define (get-minimax-ai-move current-player)
-  (let* ([mv (minimax vboard current-player current-player 2 board -inf.0 +inf.0)]
-         [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
+  (let* ((mv (minimax vboard current-player 3))
+         (path (assoc (cadr mv) (next-move (car mv) vboard current-player))))
     (list (car mv) path)))
 
-(define current-player 2)
 
+
+(define current-player 2)
 (define (handle-button-down state x y)
   (cond
-    [(= (display-state-n state) 11)
-        (cond
-          [(and (>= x 175) (<= x 325) (>= y 325) (<= y 375))
-          (display-state 4 0)]
-          [(and (>= x 475) (<= x 625) (>= y 325) (<= y 375))
-           (display-state 12 0)]
-          [else state])]
-    
     [(= (display-state-n state) 4)
      (cond [(and (>= x 150) (<= x 350) (>= y 275) (<= y 325))
             (begin (set! mode 1) (set! current-player 2) (display-state 5 (display-state-time state)))]
            [(and (>= x 450) (<= x 650) (>= y 275) (<= y 325))
             (begin (set! mode 2) (set! current-player 2) (display-state 5 (display-state-time state)))]
-           [(and (>= x 175) (<= x 625) (>= y 350) (<= y 400))
-            (begin (set! mode 3) (set! current-player 2) (display-state 8 (display-state-time state)))]
            [else state])]
     [(= (display-state-n state) 5)
           (let* ([ind (get-index-of-clicked x y board)])
@@ -273,23 +240,16 @@
     [(or (= (display-state-n state) 7) (= (display-state-n state) 9))
      
      (cond [(null? move-path)
-           (if (or (is-endgame? current-player vboard)
-                   (is-endgame? (get-opposite-player current-player) vboard))
-               (display-state 11 (display-state-time state))
-               (begin
-                 (set! current-player (if (= current-player n-players) 1 (+ 1 current-player)))
-                 (display-state (cond [(= mode 2) (if (= (display-state-n state) 7) 8 5)]
-                                      [(= mode 1) 5]
-                                      [(= mode 3) 8]) (display-state-time state))))]
+           (begin 
+             (set! current-player (if (= current-player n-players) 1 (+ 1 current-player)))  
+             (if (is-endgame? vboard) (display-state 11 (display-state-time state)) (display-state (if (= (display-state-n state) 7) (if (= mode 2) 8 5) 5) (display-state-time state))))]
            [else 
             (begin
                    (set! current-board (place-peg peg-removed current-player (caar move-path) (cdar move-path) vboard))
                    (set! peg-removed (remove-peg current-board (caar move-path) (cdar move-path)))
                    (set! move-path (cdr move-path))
                    (display-state (display-state-n state) (add1 (display-state-time state))))])]
-    [(= (display-state-n state) 8) (let* ([ind (if (and (= mode 3) (= current-player 2))
-                                                                  (get-random-ai-move current-player)
-                                                                  (get-minimax-ai-move current-player))])
+    [(= (display-state-n state) 8) (let* ([ind (get-minimax-ai-move current-player)])
                         (begin
                         (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
                         (2d-vector-set! vboard (caar ind) (cdar ind) 0)
@@ -299,8 +259,6 @@
     [else (display-state (display-state-n state) (add1 (display-state-time state)))]))
 
 (big-bang (display-state 4 0)
-          (stop-when (lambda (state) (= (display-state-n state) 12)))
           (on-tick handle-tick)
-          (close-on-stop #t)
           (on-mouse handle-mouse-events) 
           (to-draw create-scene))

@@ -41,7 +41,7 @@
                                               (and (>= (* 2 j) (+ i 1)) (<= (* 2 j) (- 37 i))))))]))
 
 
-(define (is-endgame? current-player board)
+(define (is-endgame? board)
   (let* ((posns (append* (map (lambda (x) (map (lambda (y) (cons x y)) (range size))) (range size))))
          (filtered-posns-1
           (filter (lambda (posn)
@@ -55,9 +55,7 @@
                      (player-posns? 1 (car posn) (cdr posn) 1)
                      (= (2d-vector-ref board (car posn) (cdr posn)) 2)))
                   posns)))
-        (cond [(= 1 current-player) (= (length filtered-posns-1) 10)]
-              [(= 2 current-player) (= (length filtered-posns-2) 10)])))
-    ;(if (or (= (length filtered-posns-1) 10) (= (length filtered-posns-2) 10)) #t #f)))
+    (if (or (= (length filtered-posns-1) 10) (= (length filtered-posns-2) 10)) #t #f)))
 
 (define (cprod l1 l2)
   (append* (map (lambda (y) (map (lambda (x) (cons y x)) l2)) l1)))
@@ -98,6 +96,7 @@
          [f2 (get-direction-functions (+ i 1))])
   (map (lambda (x) (cons ((cadr x) ((caar x) i)) ((cddr x) ((cdar x) j)))) (zip f1 f2))))
 
+
 (define (zip l1 l2)
   (if (null? l2) null (cons (cons (car l1) (car l2)) (zip (cdr l1) (cdr l2)))))
 
@@ -108,6 +107,8 @@
                                                    (occupied-slot? (caar x) (cdar x) board)
                                                    (empty-slot? (cadr x) (cddr x) board))) next-zip-hop))))
                                                    
+
+
 (define (next-move pos board current-player)
   (filter (lambda (x) (and (>= (caar x) 0) (>= (cdar x) 0) (< (caar x) size) (< (cdar x) size)
                            (empty-slot? (caar x) (cdar x) board)))
@@ -117,57 +118,34 @@
   (let* ([single-hop (filter (lambda (x) (not (member x l))) (possible-hops (car pos) (cdr pos) board))])
     (if (null? single-hop) '() (remove-duplicates (append (map (lambda (x) (cons x path)) single-hop) (append* (map (lambda (x) (walk-through-hop board x (append single-hop l) (cons x path))) single-hop))))))) 
 
- (define (get-opposite-player x)
-  (if (= x 1) 2 1))
 
 ;; Evaluate Board Function
   
-(define (evaluate-board board current-player board-type)
+(define (evaluate-board board current-player)
 
- (define current-endgame (is-endgame? current-player board))
- (define other-endgame (is-endgame? (get-opposite-player current-player) board))
+ (define (get-opposite-player x)
+  (if (= x 1) 2 1))
 
- (define (vertical-distance row)
-    (cond [(= 1 current-player) (abs (- row 5))]
-          [(= 2 current-player) (abs (- row 21))]))
-
- (define (game-progress line)
-   (define (helper row)
-     (define required-row (vector-ref board row))
-     (define (helper1 vec i sum)
-       (cond [(= i size) sum]
-           [else (cond [(part-of-board? row i board-type)
-                        (if (= (vector-ref vec i) current-player)
-                            (cond [(> row line) (helper1 vec (+ i 1) (+ sum 1))]
-                                  [else (helper1 vec (+ i 1) sum)])
-                            (helper1 vec (+ i 1) sum))]
-                       [else (helper1 vec (+ i 1) sum)])]))
-     (helper1 required-row 0 0))
+ (define (score-evaluater row column current-player)
+   (define wv 2)
+     ;(cond [(< row 10) 5]
+     ;      [(< row 20) 0.75]
+     ;      [else 0.6]))
+   ;(define wh 1)
+     ;(cond [(< row 10) 0.1]
+     ;      [(< row 20) 0.25]
+     ;      [else 0.4]))
    
-   (/ (foldl (lambda (x y) (+ y (helper x))) 0 (range 0 size)) 10))
-
-  (define g (game-progress 4))
-
- (define (score-evaluater row column current-player board-type)
-  
-;   (define wv
-;       (cond [(and (>= g 0.3) (<= g 0.5)) 
-;                     (cond [(< (vertical-distance row) 4) 0.1]
-;                           [(< (vertical-distance row) 11) 0.3]
-;                     [else 0.1])]
-;              [else
-;               (cond [(< (vertical-distance row) 4) 0.5]  
-;                     [(> (vertical-distance row) 11) 1]
-;                     [else 0.9])]))
-   (define wv 1)
+   (define (vertical-distance)
+     (cond [(= 1 current-player) row]
+           [(= 2 current-player) (- (- size 1) row)]))
    
    (define (horizontal-distance)
-     (let* ([centre 11]
-            [score (- centre (abs (- centre column)))])
-       (cond [(player-posns? current-player row column board-type) 0]
-             [else score])))
+     (let* ((centre 11)
+            (score (- centre (abs (- centre column)))))
+       score))
    
-   (define (is-edge? board-type)
+   (define (is-edge?)
      (cond [(= 2 current-player) (and  (> row 3)
                                        (< 8 row)
                                        (if (even? row) (or (= column (- 12 (/ row 2)))
@@ -179,21 +157,21 @@
                                                           (= (* 2 column) (- 40 row)))
                                           (or (= column (quotient row 2))
                                               (= (* 2 column) (- 39 row)))))]))
-
-   (let ([n-score (+ (* wv (vertical-distance row)) (horizontal-distance))])
-     (cond [(player-posns? current-player row column board-type) -5]
-           [(player-posns? (get-opposite-player current-player) row column board-type)
-            (if (and (is-edge? board-type) (> g 0.5)) (+ n-score 3) n-score)]
-           [else n-score])))
-
- (define (heuristic-helper row current-player) ;Takes a row and current player and returns the its evaluted score
-
+     (+ (* wv (vertical-distance)) (horizontal-distance)))
+   ;(vertical-distance))
+  ; (let ((n-score (+ (* wv (vertical-distance)) (horizontal-distance))))
+   ;  (cond [(player-posns? (get-opposite-player current-player) row column 1)
+    ;        (if (is-edge?) (+ n-score 3) n-score)]
+     ;      [else n-score])))
+ 
+  
+ (define (heuristic-helper row current-player) ;Takes a row and current player and returns the sum 
    (define required-row (vector-ref board row))
    (define (helper vec i sum)
      (cond [(= i size) sum]
-           [else (cond [(part-of-board? row i board-type)
+           [else (cond [(part-of-board? row i 1)
                      (if (= (vector-ref vec i) current-player)
-                         (helper vec (+ i 1) (+ sum (score-evaluater row i current-player board-type)))
+                         (helper vec (+ i 1) (+ sum (score-evaluater row i current-player)))
                          (helper vec (+ i 1) sum))]
                        [else (helper vec (+ i 1) sum)])]))
    (helper required-row 0 0))
@@ -206,18 +184,15 @@
   (define Total-opponent
     (foldl (lambda(x y) (+ y (heuristic-helper x opposite-player))) 0 (build-list size (lambda(x) x))))
 
-  (cond [current-endgame +inf.0]
-        [other-endgame -inf.0]
-        [else (- Total-self Total-opponent)]))
-  
+  (- Total-self Total-opponent))
+
 ;; Minimax Function
 
-(define (minimax board current-player root-player depth board-type alpha beta)
+(define (minimax board current-player depth)
 
   (define (get-opposite-player x)
   (if (= x 1) 2 1))
-
-  ; Player1 is the maximising player
+  
   (define best-val
    (cond [(= 1 current-player) -inf.0]
          [(= 2 current-player) +inf.0]))
@@ -237,37 +212,32 @@
    (cond [(= 1 current-player) (> (caddr val1) (caddr val2))]
          [(= 2 current-player) (< (caddr val1) (caddr val2))]))
                          
-  (define (minimax-helper1 board pos next-move-list init alpha beta)
+  (define (minimax-helper1 board pos next-move-list init)
     (cond [(null? next-move-list) init]
           [else (let* ([next-pos (caar next-move-list)]
                        [new-board (make-move board pos next-pos)]
-                       [val (minimax new-board (get-opposite-player current-player) root-player (- depth 1) board-type alpha beta)]
-                       [optVal (if (compare val init) val init)]
-                       [alpha-new (if (= current-player 1) (max alpha (caddr optVal)) alpha)]
-                       [beta-new (if (= current-player 2) (min beta  (caddr optVal)) beta)])
-                (cond [(<= beta-new alpha-new) (if (compare val init) (list pos next-pos (caddr optVal)) init)]
-                      [(compare optVal init) (minimax-helper1 board pos (cdr next-move-list) (list pos next-pos (caddr optVal)) alpha-new beta-new)]
-                      [else (minimax-helper1 board pos (cdr next-move-list) init alpha-new beta-new)]))]))
+                       [val (minimax new-board (get-opposite-player current-player) (- depth 1))])
+                (if (compare val init)
+                    (minimax-helper1 board pos (cdr next-move-list) (list pos next-pos (caddr val)))
+                    (minimax-helper1 board pos (cdr next-move-list) init)))]))
 
-  (define (minimax-helper2 board current-positions init alpha beta)
+  (define (minimax-helper2 board current-positions init)
     (cond [(null? current-positions) init]
           [else (let* ([pos (car current-positions)]
                        [next-move-list (next-move pos board current-player)]
-                       [val (minimax-helper1 board pos next-move-list init alpha beta)]
-                       [optVal (if (compare val init) val init)]
-                       [alpha-new (if (= current-player 1) (max alpha (caddr optVal)) alpha)]
-                       [beta-new (if (= current-player 2) (min beta  (caddr optVal)) beta)])
-                  (if (<= beta-new alpha-new) optVal
-                      (minimax-helper2 board (cdr current-positions) optVal alpha-new beta-new)))]))
+                       [val (minimax-helper1 board pos next-move-list init)])
+                  (if (compare val init)
+                      (minimax-helper2 board (cdr current-positions) val)
+                      (minimax-helper2 board (cdr current-positions) init)))]))
 
-  (let* ([current-positions (current-player-pegs board current-player board-type)]
+  (let* ([current-positions (current-player-pegs board current-player)]
          [init (list (cons 0 0) (cons 0 0) best-val)])
-    (if (or (= depth 0) (is-endgame? 1 board) (is-endgame? 2 board))
-               (list (cons 0 0) (cons 0 0) (evaluate-board board root-player board-type))
-               (minimax-helper2 board current-positions init alpha beta))))
+    (if (or (= depth 0) (is-endgame? board))
+               (list (cons 0 0) (cons 0 0) (evaluate-board board current-player))
+               (minimax-helper2 board current-positions init))))
 
 ;Returns a list of cons containing the positions of pegs of current-player
-(define (current-player-pegs board current-player board-type) 
+(define (current-player-pegs board current-player) 
     (define (current-player-helper board row)
       (define required-row (vector-ref board row))
       (define (helper vec i acc)
@@ -277,3 +247,4 @@
                                (helper vec (+ i 1) acc))]))
       (helper required-row 0 null))
     (foldl (lambda(x y) (append (current-player-helper board x) y)) null (build-list size (lambda(x) x))))
+
