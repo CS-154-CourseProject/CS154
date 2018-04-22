@@ -216,6 +216,7 @@
                                    (current-player-pegs vboard current-player board))))]
     (list-ref next-moves (random (length next-moves)))))
 
+
 (define (get-minimax-ai-move current-player parameters)
   (let* ([mv (minimax vboard #t current-player current-player max-depth board -inf.0 +inf.0 null parameters)]
          [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])

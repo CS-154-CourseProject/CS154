@@ -5,7 +5,6 @@
 (define size 30)
 (define board 1)
 (define n 30)
-(define max-depth 2)
 
 (define (make-2d-vector r c initial)
   (build-vector r (lambda (x) (make-vector c initial))))
@@ -207,10 +206,15 @@
   (cond [current-endgame 1000]
         [other-endgame -1000]
         [else (- Total-self Total-opponent)]))
+
+(define (move-filter maximum-back initial-pos final-pos-list)
+  (let* ([initial-vert (car initial-pos)]
+         [final-vert (caar final-pos-list)])
+    (> (- maximum-back) (- final-vert initial-vert))))
   
 ;; Minimax Function
 
-(define (minimax board is-maximising-player? current-player root-player depth board-type alpha beta move parameters)
+(define (minimax board is-maximising-player? current-player root-player depth max-depth board-type alpha beta move parameters)
   
   (define best-val
     (cond [is-maximising-player? -inf.0]
@@ -237,7 +241,7 @@
                        [new-board (make-move board pos next-pos)]
                        [opposite-player (get-opposite-player current-player)]
                        [top-move (if (= depth max-depth) (list pos next-pos) move)]
-                       [val (minimax new-board (not is-maximising-player?) opposite-player root-player (- depth 1) board-type alpha beta top-move parameters)]
+                       [val (minimax new-board (not is-maximising-player?) opposite-player root-player (- depth 1) max-depth board-type alpha beta top-move parameters)]
                        [optVal (if (compare val init) val init)]
                        [alpha-new (if is-maximising-player? (max alpha (caddr optVal)) alpha)]
                        [beta-new (if (not is-maximising-player?) (min beta (caddr optVal)) beta)])
@@ -248,7 +252,9 @@
   (define (minimax-helper2 board current-positions init alpha beta)
     (cond [(null? current-positions) init]
           [else (let* ([pos (car current-positions)]
-                       [next-move-list (next-move pos board current-player)]
+                       [original-next-move-list (next-move pos board current-player)]
+                       [filtered-next-move-list (filter (lambda(x) (move-filter 4 pos x)) original-next-move-list)]
+                       [next-move-list (if (null? filtered-next-move-list) original-next-move-list filtered-next-move-list)]
                        [val (minimax-helper1 board pos next-move-list init alpha beta)]
                        [optVal (if (compare val init) val init)]
                        [alpha-new (if is-maximising-player? (max alpha (caddr optVal)) alpha)]
