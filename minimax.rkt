@@ -145,25 +145,26 @@
      (helper1 required-row 0 0))
    (/ (foldl (lambda (x y) (+ y (helper x))) 0 (build-list size (lambda(x) x))) 10))
 
-  ;(define g (game-progress 7))
+  (define g (game-progress 4))
 
  (define (score-evaluater row column current-player board-type)
   
 ;   (define wv
-;       (cond [(> g 0.5) 
-;              (cond [(< (vertical-distance row) 4) 0.5]
-;                    [(> (vertical-distance row) 11) 0.6]
-;                    [else 0.9])]
+;       (cond [(and (>= g 0.3) (<= g 0.5)) 
+;                     (cond [(< (vertical-distance row) 4) 0.1]
+;                           [(< (vertical-distance row) 11) 0.3]
+;                     [else 0.1])]
 ;              [else
 ;               (cond [(< (vertical-distance row) 4) 0.5]  
-;                     [(> (vertical-distance row) 11) 0.6]
+;                     [(> (vertical-distance row) 11) 1]
 ;                     [else 0.9])]))
-   (define wv 2)
+   (define wv 1)
    
    (define (horizontal-distance)
-     (let* ((centre 11)
-            (score (- centre (abs (- centre column)))))
-       score))
+     (let* ([centre 11]
+            [score (- centre (abs (- centre column)))])
+       (cond [(player-posns? current-player row column board-type) 0]
+             [else score])))
    
    (define (is-edge? board-type)
      (cond [(= 2 current-player) (and  (> row 3)
@@ -179,8 +180,9 @@
                                               (= (* 2 column) (- 39 row)))))]))
 
    (let ([n-score (+ (* wv (vertical-distance row)) (horizontal-distance))])
-     (cond [(player-posns? (get-opposite-player current-player) row column 1)
-            (if (is-edge? board-type) (+ n-score 3) n-score)]
+     (cond [(player-posns? current-player row column board-type) -5]
+           [(player-posns? (get-opposite-player current-player) row column board-type)
+            (if (and (is-edge? board-type) (> g 0.5)) (+ n-score 3) n-score)]
            [else n-score])))
 
  (define (heuristic-helper row current-player) ;Takes a row and current player and returns the sum 

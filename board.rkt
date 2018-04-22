@@ -197,7 +197,6 @@
          [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
     (list (car mv) path)))
 
-
 (define current-player 2)
 (define (handle-button-down state x y)
   (cond
