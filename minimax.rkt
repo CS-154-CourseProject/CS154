@@ -131,26 +131,27 @@
     (cond [(= 1 current-player) (abs (- row 3))]
           [(= 2 current-player) (abs (- row 21))]))
 
-; (define (game-progress line)
-;   (define (helper row)
-;     (define required-row (vector-ref board row))
-;     (define (helper1 vec i sum)
-;       (cond [(= i size) sum]
-;           [else (cond [(part-of-board? row i board-type)
-;                        (if (= (vector-ref vec i) current-player)
-;                            (cond [(> (vertical-distance row) line) (helper1 vec (+ i 1) (+ sum 1))]
-;                                  [else (helper1 vec (+ i 1) sum)])
-;                            (helper1 vec (+ i 1) sum))]
-;                       [else (helper1 vec (+ i 1) sum)])]))
-;     (helper1 required-row 0 0))
-;   
-;   (/ (foldl (lambda (x y) (+ y (helper x))) 0 (range 0 size)) 10))
-;
-;  (define g (game-progress 5))
+ (define (game-progress line)
+   (define (helper row)
+     (define required-row (vector-ref board row))
+     (define (helper1 vec i sum)
+       (cond [(= i size) sum]
+           [else (cond [(part-of-board? row i board-type)
+                        (if (= (vector-ref vec i) current-player)
+                            (cond [(> (vertical-distance row) line) (helper1 vec (+ i 1) (+ sum 1))]
+                                  [else (helper1 vec (+ i 1) sum)])
+                            (helper1 vec (+ i 1) sum))]
+                       [else (helper1 vec (+ i 1) sum)])]))
+     (helper1 required-row 0 0))
+   
+   (/ (foldl (lambda (x y) (+ y (helper x))) 0 (range 0 size)) 10))
+
+  (define g (game-progress 12))
 
    (define wvertical (car parameters))
    (define whop (cadr parameters))
    (define wbackmove (caddr parameters))
+   (define whorizontal (if (= g 1) 0 1))
 
  (define (score-evaluater row column current-player board-type)
    
@@ -173,10 +174,10 @@
                                           (or (= column (quotient row 2))
                                               (= (* 2 column) (- 39 row)))))]))
 
-   (define move-score1 (- (caadr move) (caar move)))
+   (define move-score1 (- (vertical-distance (caadr move)) (vertical-distance (caar move))))
    (define move-score2 (- 18 (vertical-distance (caar move))))
 
-   (let ([n-score (+ (* wvertical (vertical-distance row)) (horizontal-distance) (* whop move-score1) (* wbackmove move-score2))])
+   (let ([n-score (+ (* wvertical (vertical-distance row)) (* whorizontal (horizontal-distance)) (* whop move-score1) (* wbackmove move-score2))])
      (cond ;[(and (player-posns? current-player row column board-type) (<= g 1)) (/ -22 (vertical-distance row))]
            [(player-posns? (get-opposite-player current-player) row column board-type)
             (if (and (is-edge? board-type)) (+ n-score 3) n-score)]
@@ -209,7 +210,7 @@
 (define (move-filter maximum-back initial-pos final-pos-list)
   (let* ([initial-vert (car initial-pos)]
          [final-vert (caar final-pos-list)])
-    (> (- maximum-back) (- final-vert initial-vert))))
+    (< (- maximum-back) (- final-vert initial-vert))))
   
 ;; Minimax Function
 
