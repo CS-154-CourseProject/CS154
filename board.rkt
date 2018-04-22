@@ -113,7 +113,7 @@
 (define select-mode-scene (place-images (list
                                          (overlay/align "center" "center" (text "Player1 vs Player2" 20 "indigo") (rectangle 200 50 "outline" "black"))
                                          (overlay/align "center" "center" (text "Player vs Computer" 20 "indigo") (rectangle 200 50 "outline" "black"))
-                                         (overlay/align "center" "center" (text "Minimax AI vs Random AI Simulation" 20 "indigo") (rectangle 450 50 "outline" "black")))
+                                         (overlay/align "center" "center" (text "AI vs AI Simulation" 20 "indigo") (rectangle 450 50 "outline" "black")))
                 (list (make-posn 250 300) (make-posn 550 300) (make-posn 400 375))
                 (empty-scene 800 600)))
 (define mode 0)
@@ -195,16 +195,16 @@
                                                                                (text "You win :)" 20 "green"))]
                                        [(= mode 1) (if (= current-player 2) (text "Green wins" 20 "green")
                                                                                (text "Red wins" 20 "red"))]
-                                       [(= mode 3) (if (= current-player 2) (text "Random AI wins" 20 "green")
-                                                                               (text "Minimax AI wins" 20 "red"))]
+                                       [(= mode 3) (if (= current-player 2) (text "AI-1 wins" 20 "green")
+                                                                               (text "AI-2 wins" 20 "red"))]
                                        [else (text "!" 20 "red")])
                                  (rectangle 200 50 "solid" "white")) 400 250 end-scene)] 
     [else (place-image (overlay/align "center" "center" (cond [(= mode 2) (if (= current-player 1) (text "Computer's turn. Please wait!" 20 "red")
                                                                                (text "Your turn" 20 "green"))]
                                                               [(= mode 1) (if (= current-player 2) (text "Green's turn" 20 "green")
                                                                                (text "Red's turn" 20 "red"))]
-                                                              [(= mode 3) (if (= current-player 2) (text "Minimax AI-1 move" 20 "green")
-                                                                               (text "Minimax AI-2 move" 20 "red"))])
+                                                              [(= mode 3) (if (= current-player 2) (text "AI-1 move" 20 "green")
+                                                                               (text "AI-2 move" 20 "red"))])
                                                    (rectangle 100 40 "outline" "white")) 350 60 current-board)]))
 
 (define (handle-mouse-events state x y event)
@@ -217,7 +217,7 @@
     (list-ref next-moves (random (length next-moves)))))
 
 (define (get-minimax-ai-move current-player)
-  (let* ([mv (minimax vboard #t current-player current-player max-depth board -inf.0 +inf.0 null)]
+  (let* ([mv (minimax vboard #t current-player current-player max-depth board -inf.0 +inf.0 null (list 1 0.75 0.75))]
          [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
     (list (car mv) path)))
 
