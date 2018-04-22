@@ -124,12 +124,12 @@
   
 (define (evaluate-board board current-player board-type move parameters)
 
- (define current-endgame (is-endgame? current-player board))
- (define other-endgame (is-endgame? (get-opposite-player current-player) board))
-
- (define (vertical-distance row)
+  (define (vertical-distance row)
     (cond [(= 1 current-player) (abs (- row 3))]
           [(= 2 current-player) (abs (- row 21))]))
+
+ (define current-endgame (is-endgame? current-player board))
+ (define other-endgame (is-endgame? (get-opposite-player current-player) board))
 
  (define (game-progress line)
    (define (helper row)
@@ -151,7 +151,10 @@
    (define wvertical (car parameters))
    (define whop (cadr parameters))
    (define wbackmove (caddr parameters))
+   (define iedge (cadddr parameters))
    (define whorizontal (if (= g 1) 0 1))
+   (define move-score1 (- (caadr move) (caar move)))
+   (define move-score2 (- 18 (vertical-distance (caar move))))
 
  (define (score-evaluater row column current-player board-type)
    
@@ -174,13 +177,10 @@
                                           (or (= column (quotient row 2))
                                               (= (* 2 column) (- 39 row)))))]))
 
-   (define move-score1 (- (vertical-distance (caadr move)) (vertical-distance (caar move))))
-   (define move-score2 (- 18 (vertical-distance (caar move))))
-
-   (let ([n-score (+ (* wvertical (vertical-distance row)) (* whorizontal (horizontal-distance)) (* whop move-score1) (* wbackmove move-score2))])
+   (let ([n-score (+ (* wvertical (vertical-distance row)) (* whorizontal (horizontal-distance)))])
      (cond ;[(and (player-posns? current-player row column board-type) (<= g 1)) (/ -22 (vertical-distance row))]
            [(player-posns? (get-opposite-player current-player) row column board-type)
-            (if (and (is-edge? board-type)) (+ n-score 3) n-score)]
+            (if (and (is-edge? board-type)) (+ n-score iedge) n-score)]
            [else n-score])))
 
  (define (heuristic-helper row current-player) ;Takes a row and current player and returns the its evaluted score
@@ -203,14 +203,24 @@
   (define Total-opponent
     (foldl (lambda(x y) (+ y (heuristic-helper x opposite-player))) 0 (build-list size (lambda(x) x))))
 
+  (display "Current Player : ") (display current-player) (newline)
+  (display "Back Piece Score : ") (display (* wbackmove move-score2)) (newline)
+  (display "Hop Score : ") (display (* wbackmove move-score2)) (newline)
+
   (cond [current-endgame 1000]
         [other-endgame -1000]
-        [else (- Total-self Total-opponent)]))
+        [else (+ (* whop move-score1) (* wbackmove move-score2) (- Total-self Total-opponent))]))
 
-(define (move-filter maximum-back initial-pos final-pos-list)
+(define (move-filter current-player maximum-back initial-pos final-pos-list)
+  
+  (define (vertical-distance row)
+    (cond [(= 1 current-player) (abs (- row 3))]
+          [(= 2 current-player) (abs (- row 21))]))
+  
   (let* ([initial-vert (car initial-pos)]
          [final-vert (caar final-pos-list)])
-    (< (- maximum-back) (- final-vert initial-vert))))
+    (< (- maximum-back) (- (vertical-distance final-vert)
+                           (vertical-distance initial-vert)))))
   
 ;; Minimax Function
 
@@ -253,7 +263,7 @@
     (cond [(null? current-positions) init]
           [else (let* ([pos (car current-positions)]
                        [original-next-move-list (next-move pos board current-player)]
-                       [filtered-next-move-list (filter (lambda(x) (move-filter 4 pos x)) original-next-move-list)]
+                       [filtered-next-move-list (filter (lambda(x) (move-filter current-player 4 pos x)) original-next-move-list)]
                        [next-move-list (if (null? filtered-next-move-list) original-next-move-list filtered-next-move-list)]
                        [val (minimax-helper1 board pos next-move-list init alpha beta)]
                        [optVal (if (compare val init) val init)]

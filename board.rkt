@@ -217,12 +217,12 @@
     (list-ref next-moves (random (length next-moves)))))
 
 (define (get-minimax-ai-move current-player)
-  (let* ([mv (minimax vboard #t current-player current-player 2 2 board -inf.0 +inf.0 null (list 1 0.75 0.75))]
+  (let* ([mv (minimax vboard #t current-player current-player 2 2 board -inf.0 +inf.0 null (list 2 1 1.5 5))]
          [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
     (list (car mv) path)))
 
 (define (get-minimax-ai-move1 current-player)
-  (let* ([mv (minimax vboard #t current-player current-player 2 2 board -inf.0 +inf.0 null (list 1 0.75 0.75))]
+  (let* ([mv (minimax vboard #t current-player current-player 2 2 board -inf.0 +inf.0 null (list 2 1 1.5 5))]
          [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
     (list (car mv) path)))
 
