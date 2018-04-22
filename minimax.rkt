@@ -143,7 +143,8 @@
                             (helper1 vec (+ i 1) sum))]
                        [else (helper1 vec (+ i 1) sum)])]))
      (helper1 required-row 0 0))
-   (/ (foldl (lambda (x y) (+ y (helper x))) 0 (range 0 30)) 10))
+   
+   (/ (foldl (lambda (x y) (+ y (helper x))) 0 (range 0 size)) 10))
 
  (define g (game-progress 7))
 
@@ -187,6 +188,7 @@
            [else n-score])))
 
  (define (heuristic-helper row current-player) ;Takes a row and current player and returns the its evaluted score
+
    (define required-row (vector-ref board row))
    (define (helper vec i sum)
      (cond [(= i size) sum]
@@ -211,11 +213,12 @@
   
 ;; Minimax Function
 
-(define (minimax board current-player root-player depth board-type)
+(define (minimax board current-player root-player depth board-type alpha beta)
 
   (define (get-opposite-player x)
   (if (= x 1) 2 1))
-  
+
+  ; Player1 is the maximising player
   (define best-val
    (cond [(= 1 current-player) -inf.0]
          [(= 2 current-player) +inf.0]))
@@ -235,29 +238,34 @@
    (cond [(= 1 current-player) (> (caddr val1) (caddr val2))]
          [(= 2 current-player) (< (caddr val1) (caddr val2))]))
                          
-  (define (minimax-helper1 board pos next-move-list init)
+  (define (minimax-helper1 board pos next-move-list init alpha beta)
     (cond [(null? next-move-list) init]
           [else (let* ([next-pos (caar next-move-list)]
                        [new-board (make-move board pos next-pos)]
-                       [val (minimax new-board (get-opposite-player current-player) root-player (- depth 1) board-type)])
-                (if (compare val init)
-                    (minimax-helper1 board pos (cdr next-move-list) (list pos next-pos (caddr val)))
-                    (minimax-helper1 board pos (cdr next-move-list) init)))]))
+                       [val (minimax new-board (get-opposite-player current-player) root-player (- depth 1) board-type alpha beta)]
+                       [optVal (if (compare val init) val init)]
+                       [alpha-new (if (= current-player 1) (max alpha (caddr optVal)) alpha)]
+                       [beta-new (if (= current-player 2) (min beta  (caddr optVal)) beta)])
+                (cond [(<= beta-new alpha-new) (if (compare val init) (list pos next-pos (caddr optVal)) init)]
+                      [(compare optVal init) (minimax-helper1 board pos (cdr next-move-list) (list pos next-pos (caddr optVal)) alpha-new beta-new)]
+                      [else (minimax-helper1 board pos (cdr next-move-list) init alpha-new beta-new)]))]))
 
-  (define (minimax-helper2 board current-positions init)
+  (define (minimax-helper2 board current-positions init alpha beta)
     (cond [(null? current-positions) init]
           [else (let* ([pos (car current-positions)]
                        [next-move-list (next-move pos board current-player)]
-                       [val (minimax-helper1 board pos next-move-list init)])
-                  (if (compare val init)
-                      (minimax-helper2 board (cdr current-positions) val)
-                      (minimax-helper2 board (cdr current-positions) init)))]))
+                       [val (minimax-helper1 board pos next-move-list init alpha beta)]
+                       [optVal (if (compare val init) val init)]
+                       [alpha-new (if (= current-player 1) (max alpha (caddr optVal)) alpha)]
+                       [beta-new (if (= current-player 2) (min beta  (caddr optVal)) beta)])
+                  (if (<= beta-new alpha-new) optVal
+                      (minimax-helper2 board (cdr current-positions) optVal alpha-new beta-new)))]))
 
   (let* ([current-positions (current-player-pegs board current-player board-type)]
          [init (list (cons 0 0) (cons 0 0) best-val)])
     (if (or (= depth 0) (is-endgame? 1 board) (is-endgame? 2 board))
                (list (cons 0 0) (cons 0 0) (evaluate-board board root-player board-type))
-               (minimax-helper2 board current-positions init))))
+               (minimax-helper2 board current-positions init alpha beta))))
 
 ;Returns a list of cons containing the positions of pegs of current-player
 (define (current-player-pegs board current-player board-type) 

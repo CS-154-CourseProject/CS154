@@ -11,7 +11,7 @@
 (define player-next-colors (list 'LightPink 'GreenYellow 'Gold 'SkyBlue 'DarkGray))
 (define pegs-per-player 10)
 (define slot-radius 9)
-(define board 1)
+(define board 3)
 (define theta-of-unit (if (or (= board 2) (= board 3)) 90 60))
                           
 (define unit1
@@ -110,9 +110,11 @@
 
 
 
-(define select-mode-scene (place-images (list (overlay/align "center" "center" (text "Player1 vs Player2" 20 "indigo") (rectangle 200 50 "outline" "black"))
-                      (overlay/align "center" "center" (text "Player vs Computer" 20 "indigo") (rectangle 200 50 "outline" "black")))
-                (list (make-posn 250 300) (make-posn 550 300))
+(define select-mode-scene (place-images (list
+                                         (overlay/align "center" "center" (text "Player1 vs Player2" 20 "indigo") (rectangle 200 50 "outline" "black"))
+                                         (overlay/align "center" "center" (text "Player vs Computer" 20 "indigo") (rectangle 200 50 "outline" "black"))
+                                         (overlay/align "center" "center" (text "Minimax AI vs Random AI Simulation" 20 "indigo") (rectangle 450 50 "outline" "black")))
+                (list (make-posn 250 300) (make-posn 550 300) (make-posn 400 375))
                 (empty-scene 800 600)))
 (define mode 0)
 
@@ -175,31 +177,36 @@
 (define move-path '())
 
 (struct display-state (n time) #:transparent)
-
+(define current-player 2)
 
 (define (create-scene state)
   (cond
     [(= (display-state-n state) 4) select-mode-scene]
     [(= (display-state-n state) 11) (text "Game Over" 36 "indigo")]
-    [else current-board]))
+    [else (place-image (overlay/align "center" "center" (cond [(= mode 2) (if (= current-player 1) (text "Computer's turn. Please wait!" 20 "red")
+                                                                               (text "Your turn" 20 "green"))]
+                                                              [(= mode 1) (if (= current-player 2) (text "Green's turn" 20 "green")
+                                                                               (text "Red's turn" 20 "red"))]
+                                                              [(= mode 3) (if (= current-player 2) (text "Random AI move" 20 "green")
+                                                                               (text "Minimax AI move" 20 "red"))])
+                                                   (rectangle 100 40 "outline" "white")) 350 60 current-board)]))
 
 (define (handle-mouse-events state x y event)
   (cond [(mouse=? event "button-down") (handle-button-down state x y)]
         [else state]))
 
-;(define (get-random-ai-move current-player)
-;  (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (list x y)) (next-move x vboard 1)))
-;                                   (current-player-pegs vboard current-player))))]
-;    (list-ref next-moves (random (length next-moves)))))
+(define (get-random-ai-move current-player)
+  (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (list x y)) (next-move x vboard 1)))
+                                   (current-player-pegs vboard current-player board))))]
+    (list-ref next-moves (random (length next-moves)))))
 
 (define (get-minimax-ai-move current-player)
-  (let* ((mv (minimax vboard current-player current-player 2 board))
-         (path (assoc (cadr mv) (next-move (car mv) vboard current-player))))
+  (let* ([mv (minimax vboard current-player current-player 2 board -inf.0 +inf.0)]
+         [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
     (list (car mv) path)))
 
 
 
-(define current-player 2)
 (define (handle-button-down state x y)
   (cond
     [(= (display-state-n state) 4)
@@ -207,6 +214,8 @@
             (begin (set! mode 1) (set! current-player 2) (display-state 5 (display-state-time state)))]
            [(and (>= x 450) (<= x 650) (>= y 275) (<= y 325))
             (begin (set! mode 2) (set! current-player 2) (display-state 5 (display-state-time state)))]
+           [(and (>= x 175) (<= x 625) (>= y 350) (<= y 400))
+            (begin (set! mode 3) (set! current-player 2) (display-state 8 (display-state-time state)))]
            [else state])]
     [(= (display-state-n state) 5)
           (let* ([ind (get-index-of-clicked x y board)])
@@ -242,14 +251,20 @@
      (cond [(null? move-path)
            (begin 
              (set! current-player (if (= current-player n-players) 1 (+ 1 current-player)))  
-             (if (is-endgame? current-player vboard) (display-state 11 (display-state-time state)) (display-state (if (= (display-state-n state) 7) (if (= mode 2) 8 5) 5) (display-state-time state))))]
+             (if (or (is-endgame? current-player vboard)
+                     (is-endgame? (get-opposite-player current-player) vboard)) (display-state 11 (display-state-time state))
+                                                                                (display-state (cond [(= mode 2) (if (= (display-state-n state) 7) 8 5)]
+                                                                                                     [(= mode 1) 5]
+                                                                                                     [(= mode 3) 8]) (display-state-time state))))]
            [else 
             (begin
                    (set! current-board (place-peg peg-removed current-player (caar move-path) (cdar move-path) vboard))
                    (set! peg-removed (remove-peg current-board (caar move-path) (cdar move-path)))
                    (set! move-path (cdr move-path))
                    (display-state (display-state-n state) (add1 (display-state-time state))))])]
-    [(= (display-state-n state) 8) (let* ([ind (get-minimax-ai-move current-player)])
+    [(= (display-state-n state) 8) (let* ([ind (if (and (= mode 3) (= current-player 2))
+                                                                  (get-random-ai-move current-player)
+                                                                  (get-minimax-ai-move current-player))])
                         (begin
                         (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
                         (2d-vector-set! vboard (caar ind) (cdar ind) 0)
