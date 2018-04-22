@@ -216,8 +216,8 @@
                                    (current-player-pegs vboard current-player board))))]
     (list-ref next-moves (random (length next-moves)))))
 
-(define (get-minimax-ai-move current-player)
-  (let* ([mv (minimax vboard #t current-player current-player max-depth board -inf.0 +inf.0 null (list 1 0.75 0.75))]
+(define (get-minimax-ai-move current-player parameters)
+  (let* ([mv (minimax vboard #t current-player current-player max-depth board -inf.0 +inf.0 null parameters)]
          [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
     (list (car mv) path)))
 
@@ -286,8 +286,8 @@
                    (set! move-path (cdr move-path))
                    (display-state (display-state-n state) (add1 (display-state-time state))))])]
     [(= (display-state-n state) 8) (let* ([ind (if (and (= mode 3) (= current-player 2))
-                                                                  (get-minimax-ai-move current-player)
-                                                                  (get-minimax-ai-move current-player))])
+                                                                  (get-minimax-ai-move current-player (list 1 0.75 0.75 3))
+                                                                  (get-minimax-ai-move current-player (list 2 1.75 1.25 5)))])
                         (begin
                         (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
                         (2d-vector-set! vboard (caar ind) (cdar ind) 0)

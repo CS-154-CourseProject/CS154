@@ -152,6 +152,7 @@
    (define wvertical (car parameters))
    (define whop (cadr parameters))
    (define wbackmove (caddr parameters))
+   (define iedge (cadddr parameters))
 
  (define (score-evaluater row column current-player board-type)
    
@@ -180,7 +181,7 @@
    (let ([n-score (+ (* wvertical (vertical-distance row)) (horizontal-distance) (* whop move-score1) (* wbackmove move-score2))])
      (cond ;[(and (player-posns? current-player row column board-type) (<= g 1)) (/ -22 (vertical-distance row))]
            [(player-posns? (get-opposite-player current-player) row column board-type)
-            (if (and (is-edge? board-type)) (+ n-score 3) n-score)]
+            (if (and (is-edge? board-type)) (+ n-score iedge) n-score)]
            [else n-score])))
 
  (define (heuristic-helper row current-player) ;Takes a row and current player and returns the its evaluted score
