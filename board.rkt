@@ -11,7 +11,7 @@
 (define player-next-colors (list 'LightPink 'GreenYellow 'Gold 'SkyBlue 'DarkGray))
 (define pegs-per-player 10)
 (define slot-radius 9)
-(define board 1)
+(define board 3)
 (define theta-of-unit (if (or (= board 2) (= board 3)) 90 60))
                           
 (define unit1
@@ -175,13 +175,17 @@
 (define move-path '())
 
 (struct display-state (n time) #:transparent)
-
+(define current-player 2)
 
 (define (create-scene state)
   (cond
     [(= (display-state-n state) 4) select-mode-scene]
     [(= (display-state-n state) 11) (text "Game Over" 36 "indigo")]
-    [else current-board]))
+    [else (place-image (overlay/align "center" "center" (if (= mode 2) (if (= current-player 1) (text "Computer's turn. Please wait!" 20 "red")
+                                                                               (text "Your turn" 20 "green"))
+                                                                       (if (= current-player 2) (text "Green's turn" 20 "green")
+                                                                               (text "Red's turn" 20 "red")))
+                                                   (rectangle 100 40 "outline" "white")) 350 60 current-board)]))
 
 (define (handle-mouse-events state x y event)
   (cond [(mouse=? event "button-down") (handle-button-down state x y)]
@@ -198,7 +202,7 @@
     (list (car mv) path)))
 
 
-(define current-player 2)
+
 (define (handle-button-down state x y)
   (cond
     [(= (display-state-n state) 4)
