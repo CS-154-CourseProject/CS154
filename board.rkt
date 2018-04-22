@@ -298,7 +298,7 @@
                         (display-state 9 (add1 (display-state-time state)))))]
     [else (display-state (display-state-n state) (add1 (display-state-time state)))]))
 
-(big-bang (display-state 11 0)
+(big-bang (display-state 4 0)
           (stop-when (lambda (state) (= (display-state-n state) 12)))
           (on-tick handle-tick)
           (close-on-stop #t)
