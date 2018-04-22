@@ -11,7 +11,7 @@
 (define player-next-colors (list 'LightPink 'GreenYellow 'Gold 'SkyBlue 'DarkGray))
 (define pegs-per-player 10)
 (define slot-radius 9)
-(define board 3)
+(define board 1)
 (define theta-of-unit (if (or (= board 2) (= board 3)) 90 60))
                           
 (define unit1
@@ -172,6 +172,13 @@
 (fill-vector-posns 2)
 
 
+(define end-scene (place-images (list
+                                         (overlay/align "center" "center" (text "Game Ends" 20 "indigo") (rectangle 200 50 "outline" "white"))
+                                         (overlay/align "center" "center" (text "Play Again" 20 "indigo") (rectangle 150 50 "outline" "black"))
+                                         (overlay/align "center" "center" (text "Exit" 20 "indigo") (rectangle 150 50 "outline" "black")))
+                (list (make-posn 400 150) (make-posn 250 350) (make-posn 550 350))
+                (empty-scene 800 600)))
+
 (define initial (cons 0 0))
 
 (define move-path '())
@@ -182,7 +189,16 @@
 (define (create-scene state)
   (cond
     [(= (display-state-n state) 4) select-mode-scene]
-    [(= (display-state-n state) 11) (text "Game Over" 36 "indigo")]
+    [(= (display-state-n state) 11)
+     (place-image (overlay/align "center" "center"
+                                 (cond [(= mode 2) (if (= current-player 1) (text "Computer wins. You lose! :(" 20 "red")
+                                                                               (text "You win :)" 20 "green"))]
+                                       [(= mode 1) (if (= current-player 2) (text "Green wins" 20 "green")
+                                                                               (text "Red wins" 20 "red"))]
+                                       [(= mode 3) (if (= current-player 2) (text "Random AI wins" 20 "green")
+                                                                               (text "Minimax AI wins" 20 "red"))]
+                                       [else (text "!" 20 "red")])
+                                 (rectangle 200 50 "solid" "white")) 400 250 end-scene)] 
     [else (place-image (overlay/align "center" "center" (cond [(= mode 2) (if (= current-player 1) (text "Computer's turn. Please wait!" 20 "red")
                                                                                (text "Your turn" 20 "green"))]
                                                               [(= mode 1) (if (= current-player 2) (text "Green's turn" 20 "green")
@@ -209,6 +225,14 @@
 
 (define (handle-button-down state x y)
   (cond
+    [(= (display-state-n state) 11)
+        (cond
+          [(and (>= x 175) (<= x 325) (>= y 325) (<= y 375))
+          (display-state 4 0)]
+          [(and (>= x 475) (<= x 625) (>= y 325) (<= y 375))
+           (display-state 12 0)]
+          [else state])]
+    
     [(= (display-state-n state) 4)
      (cond [(and (>= x 150) (<= x 350) (>= y 275) (<= y 325))
             (begin (set! mode 1) (set! current-player 2) (display-state 5 (display-state-time state)))]
@@ -249,13 +273,14 @@
     [(or (= (display-state-n state) 7) (= (display-state-n state) 9))
      
      (cond [(null? move-path)
-           (begin 
-             (set! current-player (if (= current-player n-players) 1 (+ 1 current-player)))  
-             (if (or (is-endgame? current-player vboard)
-                     (is-endgame? (get-opposite-player current-player) vboard)) (display-state 11 (display-state-time state))
-                                                                                (display-state (cond [(= mode 2) (if (= (display-state-n state) 7) 8 5)]
-                                                                                                     [(= mode 1) 5]
-                                                                                                     [(= mode 3) 8]) (display-state-time state))))]
+           (if (or (is-endgame? current-player vboard)
+                   (is-endgame? (get-opposite-player current-player) vboard))
+               (display-state 11 (display-state-time state))
+               (begin
+                 (set! current-player (if (= current-player n-players) 1 (+ 1 current-player)))
+                 (display-state (cond [(= mode 2) (if (= (display-state-n state) 7) 8 5)]
+                                      [(= mode 1) 5]
+                                      [(= mode 3) 8]) (display-state-time state))))]
            [else 
             (begin
                    (set! current-board (place-peg peg-removed current-player (caar move-path) (cdar move-path) vboard))
@@ -273,7 +298,9 @@
                         (display-state 9 (add1 (display-state-time state)))))]
     [else (display-state (display-state-n state) (add1 (display-state-time state)))]))
 
-(big-bang (display-state 4 0)
+(big-bang (display-state 11 0)
+          (stop-when (lambda (state) (= (display-state-n state) 12)))
           (on-tick handle-tick)
+          (close-on-stop #t)
           (on-mouse handle-mouse-events) 
           (to-draw create-scene))
