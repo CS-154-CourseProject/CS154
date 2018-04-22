@@ -217,11 +217,9 @@
     (list-ref next-moves (random (length next-moves)))))
 
 (define (get-minimax-ai-move current-player)
-  (let* ([mv (minimax vboard current-player current-player 2 board -inf.0 +inf.0)]
+  (let* ([mv (minimax vboard #t current-player current-player max-depth board -inf.0 +inf.0)]
          [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
     (list (car mv) path)))
-
-
 
 (define (handle-button-down state x y)
   (cond
@@ -288,7 +286,7 @@
                    (set! move-path (cdr move-path))
                    (display-state (display-state-n state) (add1 (display-state-time state))))])]
     [(= (display-state-n state) 8) (let* ([ind (if (and (= mode 3) (= current-player 2))
-                                                                  (get-random-ai-move current-player)
+                                                                  (get-minimax-ai-move current-player)
                                                                   (get-minimax-ai-move current-player))])
                         (begin
                         (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
@@ -298,7 +296,7 @@
                         (display-state 9 (add1 (display-state-time state)))))]
     [else (display-state (display-state-n state) (add1 (display-state-time state)))]))
 
-(big-bang (display-state 11 0)
+(big-bang (display-state 4 0)
           (stop-when (lambda (state) (= (display-state-n state) 12)))
           (on-tick handle-tick)
           (close-on-stop #t)
