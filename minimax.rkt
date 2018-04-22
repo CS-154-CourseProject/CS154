@@ -123,7 +123,7 @@
 
 ;; Evaluate Board Function
   
-(define (evaluate-board board current-player board-type move)
+(define (evaluate-board board current-player board-type move parameters)
 
  (define current-endgame (is-endgame? current-player board))
  (define other-endgame (is-endgame? (get-opposite-player current-player) board))
@@ -149,11 +149,11 @@
 ;
 ;  (define g (game-progress 5))
 
+   (define wvertical (car parameters))
+   (define whop (cadr parameters))
+   (define wbackmove (caddr parameters))
+
  (define (score-evaluater row column current-player board-type)
-  
-   (define wvertical 1)
-   (define whop 0.75)
-   (define wbackmove 0.75)
    
    (define (horizontal-distance)
      (let* ([centre 11]
@@ -210,7 +210,7 @@
 ;; Minimax Function
 
 
-(define (minimax board is-maximising-player? current-player root-player depth board-type alpha beta move)
+(define (minimax board is-maximising-player? current-player root-player depth board-type alpha beta move parameters)
   
   (define best-val
     (cond [is-maximising-player? -inf.0]
@@ -237,7 +237,7 @@
                        [new-board (make-move board pos next-pos)]
                        [opposite-player (get-opposite-player current-player)]
                        [top-move (if (= depth max-depth) (list pos next-pos) move)]
-                       [val (minimax new-board (not is-maximising-player?) opposite-player root-player (- depth 1) board-type alpha beta top-move)]
+                       [val (minimax new-board (not is-maximising-player?) opposite-player root-player (- depth 1) board-type alpha beta top-move parameters)]
                        [optVal (if (compare val init) val init)]
                        [alpha-new (if is-maximising-player? (max alpha (caddr optVal)) alpha)]
                        [beta-new (if (not is-maximising-player?) (min beta (caddr optVal)) beta)])
@@ -259,7 +259,7 @@
   (let* ([current-positions (current-player-pegs board current-player board-type)]
          [init (list (cons 0 0) (cons 0 0) best-val)])
     (if (or (= depth 0) (is-endgame? 1 board) (is-endgame? 2 board))
-               (list (cons 0 0) (cons 0 0) (evaluate-board board root-player board-type move))
+               (list (cons 0 0) (cons 0 0) (evaluate-board board root-player board-type move parameters))
                (minimax-helper2 board current-positions init alpha beta))))
 
 ;Returns a list of cons containing the positions of pegs of current-player
