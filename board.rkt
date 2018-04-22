@@ -228,7 +228,7 @@
 
 (define (handle-button-down state x y)
   (cond
-    [(= (display-state-n state) 11)
+    [(= (display-state-n state) 11) 
         (cond
           [(and (>= x 175) (<= x 325) (>= y 325) (<= y 375))
           (display-state 4 0)]
@@ -291,8 +291,8 @@
                    (set! move-path (cdr move-path))
                    (display-state (display-state-n state) (add1 (display-state-time state))))])]
     [(= (display-state-n state) 8) (let* ([ind (if (and (= mode 3) (= current-player 2))
-                                                                  (get-minimax-ai-move current-player)
-                                                                  (get-minimax-ai-move1 current-player))])
+                                                                  (get-minimax-ai-move current-player (list 1 0.75 0.75 3))
+                                                                  (get-minimax-ai-move current-player (list 2 1.75 1.25 5)))])
                         (begin
                         (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
                         (2d-vector-set! vboard (caar ind) (cdar ind) 0)
