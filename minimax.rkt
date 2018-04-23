@@ -148,12 +148,12 @@
 
    (define g (game-progress 9 current-player))
 
-   (define wvertical (car parameters))
-   (define whop (cadr parameters))
-   (define wbackmove (caddr parameters))
-   (define iedge (cadddr parameters))
-   (define whorizontal (if (= g 1) 0 3))
-   ;(define whorizontal 3)
+   (define wvertical (list-ref parameters 0))
+   (define whop (list-ref parameters 1))
+   (define wbackmove (list-ref parameters 2))
+   (define iedge (list-ref parameters 3))
+   (define whorizontal (if (= g 1) 0 (list-ref parameters 4)))
+   ;(define whorizontal (list-ref parameters 4))
    (define move-score1 (- (vertical-distance (caadr move) current-player) (vertical-distance (caar move) current-player)))
    (define move-score2 (- 18 (vertical-distance (caar move) current-player)))
 
@@ -236,8 +236,8 @@
     (cond [(= 1 current-player) (abs (- row 3))]
           [(= 2 current-player) (abs (- row 21))]))
 
-  (define whop (cadr parameters))
-  (define wbackmove (caddr parameters))
+  (define whop (list-ref parameters 1))
+  (define wbackmove (list-ref parameters 2))
 
   (define (make-move board pos1 pos2)
     (let* ([i1 (car pos1)]
