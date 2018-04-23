@@ -228,10 +228,14 @@
 
 (define (handle-button-down state x y)
   (cond
-    [(= (display-state-n state) 11) 
+    [(= (display-state-n state) 11)
         (cond
           [(and (>= x 175) (<= x 325) (>= y 325) (<= y 375))
-          (display-state 4 0)]
+          (begin
+            (map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) 0)) valid-slots)
+            (fill-vector-posns 2)
+            (set! current-board initial-board)
+            (display-state 4 0))]
           [(and (>= x 475) (<= x 625) (>= y 325) (<= y 375))
            (display-state 12 0)]
           [else state])]
@@ -299,6 +303,7 @@
                         (2d-vector-set! vboard (caaadr ind) (cdaadr ind) current-player)
                         (set! move-path (reverse (cadr ind)))
                         (display-state 9 (add1 (display-state-time state)))))]
+    
     [else (display-state (display-state-n state) (add1 (display-state-time state)))]))
 
 (big-bang (display-state 4 0)
