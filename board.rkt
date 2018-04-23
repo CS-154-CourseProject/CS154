@@ -211,20 +211,26 @@
   (cond [(mouse=? event "button-down") (handle-button-down state x y)]
         [else state]))
 
+;;;;;;;;;;;;;;; AI move functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define (get-random-ai-move current-player)
   (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (list x y)) (next-move x vboard 1)))
                                    (current-player-pegs vboard current-player board))))]
     (list-ref next-moves (random (length next-moves)))))
 
 (define (get-minimax-ai-move current-player)
-  (let* ([mv (minimax vboard #t current-player current-player 2 2 board -inf.0 +inf.0 null (list 2 1.5 1.5 5))]
+  ; The list of parameters to the minimax is in the following order (wvertical whop wbackpiece wedge whorizontal)
+  (let* ([mv (minimax vboard #t current-player current-player 2 2 board -inf.0 +inf.0 null (list 2 1.5 1.5 5 3))]
          [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
     (list (car mv) path)))
 
 (define (get-minimax-ai-move1 current-player)
-  (let* ([mv (minimax vboard #t current-player current-player 2 2 board -inf.0 +inf.0 null (list 2 1.5 1.5 5))]
+  ; The list of parameters to the minimax is in the following order (wvertical whop wbackpiece wedge whorizontal)
+  (let* ([mv (minimax vboard #t current-player current-player 2 2 board -inf.0 +inf.0 null (list 2 1.5 1.5 5 3))]
          [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
     (list (car mv) path)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (handle-button-down state x y)
   (cond
