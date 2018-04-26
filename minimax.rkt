@@ -93,12 +93,12 @@
 
    (define g (game-progress 12 current-player))
 
-   (define wvertical (list-ref parameters 0))
+  (define wvertical (if (>= g 9) (* 3 (list-ref parameters 0)) (list-ref parameters 0)))
    (define whop (list-ref parameters 1))
    (define wbackmove (list-ref parameters 2))
    (define iedge (list-ref parameters 3))
-   ;(define whorizontal (if (= g 10) 0.25 (list-ref parameters 4)))
-   (define whorizontal (list-ref parameters 4))
+   (define whorizontal (if (= g 10) 0 (list-ref parameters 4)))
+   ;(define whorizontal (list-ref parameters 4))
    (define move-score1 (- (vertical-distance (caadr move) current-player) (vertical-distance (caar move) current-player)))
    (define move-score2 (- 18 (vertical-distance (caar move) current-player)))
 
@@ -138,11 +138,11 @@
   (define Total-opponent
     (foldl (lambda (x y) (+ y (score-evaluater (car x) (cdr x) opposite-player board-type))) 0 (vector-ref orig-pegs (- opposite-player 1))))
 
-  ;(display "Current Player : ") (display current-player) (newline)
-  ;(display "Back Piece Score : ") (display (* wbackmove move-score2)) (newline)
-  ;(display "Hop Score : ") (display (* whop move-score1)) (newline)
-  ;(display "Total Self : ") (display Total-self) (newline)
-  ;(display "Total Opponent : ") (display Total-opponent) (newline)
+;  (display "Current Player : ") (display current-player) (newline)
+;  (display "Back Piece Score : ") (display (* wbackmove move-score2)) (newline)
+;  (display "Hop Score : ") (display (* whop move-score1)) (newline)
+;  (display "Total Self : ") (display Total-self) (newline)
+;  (display "Total Opponent : ") (display Total-opponent) (newline)
  
   (cond [current-endgame 100000]
         [other-endgame -100000]
@@ -205,10 +205,15 @@
                        [original-val (minimax (not is-maximising-player?) opposite-player root-player (- depth 1) max-depth board-type alpha beta top-move parameters goal new-posns)]
                        [move-score1 (- (vertical-distance (car next-pos) current-player) (vertical-distance (car pos) current-player))]
                        [move-score2 (- 18 (vertical-distance (car pos) current-player))]
-                       [val (list (car original-val) (cadr original-val) (+ (* wbackmove move-score2) (* whop move-score1) (caddr original-val)))]
+                       [val
+                        (begin (display "Considered: ") (display pos) (display "->") (displayln nextpos) 
+                        (list (car original-val) (cadr original-val) (+ (* wbackmove move-score2) (* whop move-score1) (caddr original-val)))
+                        )
+                        ]
+                        
                        [optVal (if (compare val init) val init)]
                        [alpha-new (if is-maximising-player? (max alpha (caddr optVal)) alpha)]
-                       [beta-new (if(not is-maximising-player?) (min beta (caddr optVal)) beta)])
+                       [beta-new (if (not is-maximising-player?) (min beta (caddr optVal)) beta)])
                 (cond [(<= beta-new alpha-new) (if (compare val init) (list pos next-pos (caddr optVal)) init)]
                       [(compare optVal init) (minimax-helper1 orig-pegs pos (cdr next-move-list) (list pos next-pos (caddr optVal)) alpha-new beta-new)]
                       [else (minimax-helper1 orig-pegs pos (cdr next-move-list) init alpha-new beta-new)]))]))
@@ -223,8 +228,10 @@
                        [optVal (if (compare val init) val init)]
                        [alpha-new (if is-maximising-player? (max alpha (caddr optVal)) alpha)]
                        [beta-new (if (not is-maximising-player?) (min beta  (caddr optVal)) beta)])
-                  (if (<= beta-new alpha-new) optVal
-                      (minimax-helper2 orig-pegs (cdr current-positions) optVal alpha-new beta-new)))]))
+                 ; (if (<= beta-new alpha-new) optVal
+                      (minimax-helper2 orig-pegs (cdr current-positions) optVal alpha-new beta-new)
+                ;  )
+                )]))
 
   (let* ([current-positions (vector-ref orig-pegs (- current-player 1))]
          [init (list (cons 0 0) (cons 0 0) best-val)])

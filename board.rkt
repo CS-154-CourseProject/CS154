@@ -34,15 +34,33 @@
 (define prev-config initial-board)
 (define next-list '())
 (define valid-slots (filter (lambda (x) (part-board? x board)) (cprod (range n) (range n))))
+(define player-posns-list (make-vector n-players '()))
+
 ;; Vector
 (define vboard (make-2d-vector size size -1))
 (map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) 0)) valid-slots)
+
 (define (fill-vector-posns i board)
   (if (= i 0) vboard
       (begin (map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) i))
                               (filter (lambda (x) (player-posns? i (car x) (cdr x) board)) (cprod (range n) (range n))))
              (fill-vector-posns (- i 1) board))))
+
+
 (fill-vector-posns n-players board)
+(define current-pegs (vector-copy player-posns-list))
+
+(define (update-posns-list initial final current-player)
+  (let* ([orig-pegs (vector-ref current-pegs (- current-player 1))])
+    (vector-set! current-pegs (- current-player 1) (cons final (remove initial orig-pegs)))))
+
+  (define (fill-posns-list i board)
+    (if (= i 0) (void)
+        (begin
+          (vector-set! player-posns-list (- i 1) (filter (lambda (x) (player-posns? i (car x) (cdr x) board)) (cprod (range n) (range n))))
+          (fill-posns-list (- i 1) board))))
+
+  (fill-posns-list n-players board)
 
 (define (peg-for-player player board)
   (circle slot-radius "solid" (list-ref player-colors (- player 1))))
@@ -58,6 +76,11 @@
   (let* ([ans (index->coords (car cords) (cdr cords))])
     (make-posn (car ans) (cdr ans))))
 
+(define (place-initial-pegs i in-board)
+  (if (= i 0) in-board
+      (place-initial-pegs (- i 1)
+                          (place-images (make-list pegs-per-player (peg-for-player i board))
+                                        (map ind->posns (vector-ref player-posns-list (- i 1))) in-board))))
 
 
 (define (create-board board)
@@ -98,43 +121,24 @@
 
   (set! full-board (place-images (make-list n row-couple) posns_board (rectangle x-size y-size "solid" "transparent")))
 
-<<<<<<< HEAD
-(define player-posns-list (make-vector n-players '()))
+  (set! player-posns-list (make-vector n-players '()))
 
 
-(define (fill-posns-list i board)
-  (if (= i 0) (void)
-      (begin
-        (vector-set! player-posns-list (- i 1) (filter (lambda (x) (player-posns? i (car x) (cdr x) board)) (cprod (range n) (range n))))
-        (fill-posns-list (- i 1) board))))
+  (fill-posns-list n-players board)
 
-(fill-posns-list n-players board)
 
-(define (place-initial-pegs i in-board)
-  (if (= i 0) in-board
-      (place-initial-pegs (- i 1)
-                          (place-images (make-list pegs-per-player (peg-for-player i board))
-                                        (map ind->posns (vector-ref player-posns-list (- i 1))) in-board))))
-
-=======
   (set! empty-slots (filter (lambda (x) (not-in-board? x board)) (cprod (range n) (range n))))
 
   (set! empty-board (place-images (make-list (length empty-slots) peg) (map ind->posns empty-slots) full-board))
 
   (set! initial-board (place-initial-pegs n-players empty-board))
->>>>>>> 15e0df6dcd261732aad611783a4abdf7ee4f3343
 
   (set! peg-removed initial-board)
 
-<<<<<<< HEAD
-(define current-pegs (vector-copy player-posns-list))
+  (set! current-pegs (vector-copy player-posns-list))
 
-(define (update-posns-list initial final current-player)
-  (let* ([orig-pegs (vector-ref current-pegs (- current-player 1))])
-    (vector-set! current-pegs (- current-player 1) (cons final (remove initial orig-pegs)))))
-=======
+  
   (set! current-board initial-board)
->>>>>>> 15e0df6dcd261732aad611783a4abdf7ee4f3343
 
   (set! prev-config initial-board)
 
@@ -145,8 +149,6 @@
   (set! vboard (make-2d-vector size size -1))
   (map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) 0)) valid-slots)
 
-<<<<<<< HEAD
-=======
   (fill-vector-posns n-players board))
 
 (define board2
@@ -161,7 +163,6 @@
     (create-board board)
     initial-board))
   
->>>>>>> 15e0df6dcd261732aad611783a4abdf7ee4f3343
 ; Player1: Computer (AI)
 ; Player2: User
 ; Player2 starts the game
@@ -282,14 +283,8 @@
 
 (define (get-minimax-ai-move current-player depth l)
   ; The list of parameters to the minimax is in the following order (wvertical whop wbackpiece wedge whorizontal)
-<<<<<<< HEAD
   (let* ([mv (minimax #t current-player current-player depth depth  board -inf.0 +inf.0 null l player-posns-list current-pegs)]
          [path (assoc (cadr mv) (next-move (car mv) current-pegs current-player board))])
-=======
-  (let* ([mv (minimax vboard #t current-player current-player depth depth board -inf.0 +inf.0 null l)]
-         [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
-    ;(displayln (next-move (car mv) vboard current-player))
->>>>>>> 15e0df6dcd261732aad611783a4abdf7ee4f3343
     (list (car mv) path)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -302,7 +297,7 @@
           (begin
             (map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) 0)) valid-slots)
             (fill-vector-posns 2 board)
-            (set! current-board initial-board)
+            (set! current-board initial-board) 
             (display-state 0 0))]
           [(and (>= x 475) (<= x 625) (>= y 325) (<= y 375))
            (display-state 12 0)]
@@ -403,14 +398,10 @@
                    (set! move-path (cdr move-path))
                    (display-state (display-state-n state) (add1 (display-state-time state))))])]
     [(= (display-state-n state) 8) (let* ([ind (if (and (= mode 3) (= current-player 2))
-<<<<<<< HEAD
+                                 ; The list of parameters to the minimax is in the following order (wvertical whop wbackpiece wedge whorizontal)
+
                                                                   (get-minimax-ai-move current-player 4 (list 2 1.5 1.5 5 3))
                                                                   (get-minimax-ai-move current-player 2 (list 2 1.5 1.5 5 3)))])
-=======
-                                 ; The list of parameters to the minimax is in the following order (wvertical whop wbackpiece wedge whorizontal)
-                                                                  (get-minimax-ai-move current-player 2 heuristic-list)
-                                                                  (get-minimax-ai-move current-player 2 heuristic-list))])
->>>>>>> 15e0df6dcd261732aad611783a4abdf7ee4f3343
                         (begin
                         (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
                         (2d-vector-set! vboard (caar ind) (cdar ind) 0)
