@@ -206,10 +206,7 @@
                        [move-score1 (- (vertical-distance (car next-pos) current-player) (vertical-distance (car pos) current-player))]
                        [move-score2 (- 18 (vertical-distance (car pos) current-player))]
                        [val
-                        (begin (display "Considered: ") (display pos) (display "->") (displayln nextpos) 
-                        (list (car original-val) (cadr original-val) (+ (* wbackmove move-score2) (* whop move-score1) (caddr original-val)))
-                        )
-                        ]
+                        (list (car original-val) (cadr original-val) (+ (* wbackmove move-score2) (* whop move-score1) (caddr original-val)))]
                         
                        [optVal (if (compare val init) val init)]
                        [alpha-new (if is-maximising-player? (max alpha (caddr optVal)) alpha)]
@@ -228,9 +225,8 @@
                        [optVal (if (compare val init) val init)]
                        [alpha-new (if is-maximising-player? (max alpha (caddr optVal)) alpha)]
                        [beta-new (if (not is-maximising-player?) (min beta  (caddr optVal)) beta)])
-                 ; (if (<= beta-new alpha-new) optVal
-                      (minimax-helper2 orig-pegs (cdr current-positions) optVal alpha-new beta-new)
-                ;  )
+                 (if (<= beta-new alpha-new) optVal
+                      (minimax-helper2 orig-pegs (cdr current-positions) optVal alpha-new beta-new))
                 )]))
 
   (let* ([current-positions (vector-ref orig-pegs (- current-player 1))]
