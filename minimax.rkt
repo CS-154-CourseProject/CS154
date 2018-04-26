@@ -93,12 +93,13 @@
 
    (define g (game-progress 12 current-player))
 
-  (define wvertical (if (>= g 9) (* 3 (list-ref parameters 0)) (list-ref parameters 0)))
+  (define whorizontal (list-ref parameters 0))
+  ;(define wvertical (if (>= g 9) (* 100 (list-ref parameters 0)) (list-ref parameters 0)))
    (define whop (list-ref parameters 1))
    (define wbackmove (list-ref parameters 2))
    (define iedge (list-ref parameters 3))
-   (define whorizontal (if (= g 10) 0 (list-ref parameters 4)))
-   ;(define whorizontal (list-ref parameters 4))
+   ;(define whorizontal (if (= g 10) 0 (list-ref parameters 4)))
+   (define whorizontal (list-ref parameters 4))
    (define move-score1 (- (vertical-distance (caadr move) current-player) (vertical-distance (caar move) current-player)))
    (define move-score2 (- 18 (vertical-distance (caar move) current-player)))
 
@@ -144,8 +145,8 @@
 ;  (display "Total Self : ") (display Total-self) (newline)
 ;  (display "Total Opponent : ") (display Total-opponent) (newline)
  
-  (cond [current-endgame 100000]
-        [other-endgame -100000]
+  (cond [current-endgame 1000000]
+        [other-endgame -1000000]
         [else (- Total-self Total-opponent)]))
         ;[else (+ (* wbackmove move-score2) (* whop move-score1) (- Total-self Total-opponent))]))
 

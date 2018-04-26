@@ -40,6 +40,7 @@
 (define vboard (make-2d-vector size size -1))
 (map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) 0)) valid-slots)
 
+
 (define (fill-vector-posns i board)
   (if (= i 0) vboard
       (begin (map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) i))
@@ -295,9 +296,7 @@
         (cond
           [(and (>= x 175) (<= x 325) (>= y 325) (<= y 375))
           (begin
-            (map (lambda (x) (2d-vector-set! vboard (car x) (cdr x) 0)) valid-slots)
-            (fill-vector-posns 2 board)
-            (set! current-board initial-board) 
+            (create-board 1)
             (display-state 0 0))]
           [(and (>= x 475) (<= x 625) (>= y 325) (<= y 375))
            (display-state 12 0)]
@@ -400,8 +399,8 @@
     [(= (display-state-n state) 8) (let* ([ind (if (and (= mode 3) (= current-player 2))
                                  ; The list of parameters to the minimax is in the following order (wvertical whop wbackpiece wedge whorizontal)
 
-                                                                  (get-minimax-ai-move current-player 4 (list 2 1.5 1.5 5 3))
-                                                                  (get-minimax-ai-move current-player 2 (list 2 1.5 1.5 5 3)))])
+                                                                  (get-minimax-ai-move current-player 2 (list 2 1.5 1.5 5 3))
+                                                                  (get-minimax-ai-move current-player 4 (list 2 1.5 1.5 5 3)))])
                         (begin
                         (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
                         (2d-vector-set! vboard (caar ind) (cdar ind) 0)
