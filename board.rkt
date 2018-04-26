@@ -68,17 +68,30 @@
 
 (define empty-board (place-images (make-list (length empty-slots) peg) (map ind->posns empty-slots) full-board))
 
-(define players-posns null)
+(define player-posns-list (make-vector n-players '()))
 
-                       
+
+(define (fill-posns-list i board)
+  (if (= i 0) (void)
+      (begin
+        (vector-set! player-posns-list (- i 1) (filter (lambda (x) (player-posns? i (car x) (cdr x) board)) (cprod (range n) (range n))))
+        (fill-posns-list (- i 1) board))))
+
+(fill-posns-list n-players board)
 
 (define (place-initial-pegs i in-board)
   (if (= i 0) in-board
       (place-initial-pegs (- i 1)
                           (place-images (make-list pegs-per-player (peg-for-player i board))
-                                        (map ind->posns (filter (lambda (x) (player-posns? i (car x) (cdr x) board)) (cprod (range n) (range n)))) in-board))))
+                                        (map ind->posns (vector-ref player-posns-list (- i 1))) in-board))))
 
 
+
+(define current-pegs (vector-copy player-posns-list))
+
+(define (update-posns-list initial final current-player)
+  (let* ([orig-pegs (vector-ref current-pegs (- current-player 1))])
+    (vector-set! current-pegs (- current-player 1) (cons final (remove initial orig-pegs)))))
 
 
 (define select-mode-scene (place-images (list
@@ -90,7 +103,6 @@
 (define mode 0)
 
 (define initial-board (place-initial-pegs n-players empty-board))
-
 
 ; Player1: Computer (AI)
 ; Player2: User
@@ -187,14 +199,14 @@
 ;;;;;;;;;;;;;;; AI move functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (get-random-ai-move current-player)
-  (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (list x y)) (next-move x vboard 1)))
+  (let* [(next-moves (append* (map (lambda (x) (map (lambda (y) (list x y)) (next-move x current-pegs 1 board)))
                                    (current-player-pegs vboard current-player board))))]
     (list-ref next-moves (random (length next-moves)))))
 
-(define (get-minimax-ai-move current-player l)
+(define (get-minimax-ai-move current-player depth l)
   ; The list of parameters to the minimax is in the following order (wvertical whop wbackpiece wedge whorizontal)
-  (let* ([mv (minimax vboard #t current-player current-player 2 2 board -inf.0 +inf.0 null l)]
-         [path (assoc (cadr mv) (next-move (car mv) vboard current-player))])
+  (let* ([mv (minimax #t current-player current-player depth depth  board -inf.0 +inf.0 null l player-posns-list current-pegs)]
+         [path (assoc (cadr mv) (next-move (car mv) current-pegs current-player board))])
     (list (car mv) path)))
 
 
@@ -226,7 +238,7 @@
           (let* ([ind (get-index-of-clicked x y board)])
             (if (and (not (null? ind)) (= current-player (2d-vector-ref vboard (caar ind) (cdar ind))))
                 (begin (set! prev-config current-board)
-                       (let* ([next (next-move (car ind) vboard current-player)])
+                       (let* ([next (next-move (car ind) current-pegs current-player board)])
                          (set! initial (car ind))
                          (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
                          (set! current-board (place-images (make-list (length next) (next-pegs-player current-player board)) (map (lambda (x) (ind->posns(car x))) next) current-board))
@@ -238,6 +250,7 @@
                   (begin
                     (2d-vector-set! vboard (car initial) (cdr initial) 0)
                     (2d-vector-set! vboard (caar ind) (cdar ind) current-player)
+                    (update-posns-list initial (car ind) current-player)
              
                     (set! move-path (reverse (assoc (car ind) next-list)))
                     (display-state 7 (display-state-time state)))]
@@ -254,8 +267,8 @@
     [(or (= (display-state-n state) 7) (= (display-state-n state) 9))
      
      (cond [(null? move-path)
-           (if (or (is-endgame? current-player vboard)
-                   (is-endgame? (get-opposite-player current-player) vboard))
+           (if (or (is-endgame? current-player current-pegs player-posns-list)
+                   (is-endgame? (get-opposite-player current-player) current-pegs player-posns-list))
                (display-state 11 (display-state-time state))
                (begin
                  (set! current-player (if (= current-player n-players) 1 (+ 1 current-player)))
@@ -269,12 +282,13 @@
                    (set! move-path (cdr move-path))
                    (display-state (display-state-n state) (add1 (display-state-time state))))])]
     [(= (display-state-n state) 8) (let* ([ind (if (and (= mode 3) (= current-player 2))
-                                                                  (get-minimax-ai-move current-player (list 2 1.5 1.5 5 3))
-                                                                  (get-minimax-ai-move current-player (list 2 1.5 1.5 5 3)))])
+                                                                  (get-minimax-ai-move current-player 4 (list 2 1.5 1.5 5 3))
+                                                                  (get-minimax-ai-move current-player 2 (list 2 1.5 1.5 5 3)))])
                         (begin
                         (set! peg-removed (remove-peg current-board (caar ind) (cdar ind)))
                         (2d-vector-set! vboard (caar ind) (cdar ind) 0)
                         (2d-vector-set! vboard (caaadr ind) (cdaadr ind) current-player)
+                        (update-posns-list (car ind) (caadr ind) current-player)
                         (set! move-path (reverse (cadr ind)))
                         (display-state 9 (add1 (display-state-time state)))))]
     
