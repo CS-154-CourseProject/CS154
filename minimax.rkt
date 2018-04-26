@@ -91,8 +91,9 @@
  (define (game-progress line current-player)
    (length (filter (lambda (x) (> (vertical-distance (car x) current-player) line)) (vector-ref orig-pegs (- current-player 1)))))
 
-   (define g (game-progress 11 current-player))
-   (define wvertical (if (= g 10) (+ 10 (list-ref parameters 0)) (list-ref parameters 0)))
+   (define g (game-progress 12 current-player))
+
+   (define wvertical (list-ref parameters 0))
    (define whop (list-ref parameters 1))
    (define wbackmove (list-ref parameters 2))
    (define iedge (list-ref parameters 3))
@@ -143,8 +144,8 @@
   ;(display "Total Self : ") (display Total-self) (newline)
   ;(display "Total Opponent : ") (display Total-opponent) (newline)
  
-  (cond [current-endgame 1000]
-        [other-endgame -1000]
+  (cond [current-endgame 100000]
+        [other-endgame -100000]
         [else (- Total-self Total-opponent)]))
         ;[else (+ (* wbackmove move-score2) (* whop move-score1) (- Total-self Total-opponent))]))
 
