@@ -1,10 +1,9 @@
 #lang racket
 (provide (all-defined-out))
+(require "board_utils.rkt")
 (require racket/vector)
 
 (define size 30)
-(define board 1)
-(define n 30)
 
 (define (make-2d-vector r c initial)
   (build-vector r (lambda (x) (make-vector c initial))))
@@ -16,30 +15,6 @@
   (let ((v (vector-ref vec r)))
     (begin
       (vector-set! v c val))))
-
-(define (player-posns? player i j board)
-  (cond [(or (= board 1) (= board 3))
-         (cond [(= player 1) (and (< i 8) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
-                                (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))]
-               [(= player 2)  (and (< i 21) (> i 16) (if (= 0 (modulo i 2)) (and (>= j (/ i 2)) (<= (* 2 j) (- 40 i)))
-                                (and (>= j (quotient i 2)) (<= (* 2 j) (- 39 i)))))])]
-        [(= board 2)
-         (cond [(= player 1) (and (< i 8) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
-                                (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))]
-               [(= player 2) (and (> i 14) (< i 19) (if (= 0 (modulo i 2)) (and (>= (* 2 j) (+ i 2)) (<= (* 2 j) (- 38 i)))
-                                              (and (>= (* 2 j) (+ i 1)) (<= (* 2 j) (- 37 i)))))])]))
-
-(define (part-of-board? i j board)
-  (cond
-  [(or (= board 1) (= board 3)) (or (and (< i 17) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
-                                (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))
-     (and (< i 21) (> i 7) (if (= 0 (modulo i 2)) (and (>= j (/ i 2)) (<= (* 2 j) (- 40 i)))
-                                (and (>= j (quotient i 2)) (<= (* 2 j) (- 39 i))))))]
-  [(= board 2) (or (and (< i 12) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
-                                (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))
-                   (and (> i 11) (< i 19) (if (= 0 (modulo i 2)) (and (>= (* 2 j) (+ i 2)) (<= (* 2 j) (- 38 i)))
-                                              (and (>= (* 2 j) (+ i 1)) (<= (* 2 j) (- 37 i))))))]))
-
 
 (define (is-endgame? current-player board)
   (let* ((posns (append* (map (lambda (x) (map (lambda (y) (cons x y)) (range size))) (range size))))
@@ -58,12 +33,6 @@
         (cond [(= 1 current-player) (= (length filtered-posns-1) 10)]
               [(= 2 current-player) (= (length filtered-posns-2) 10)])))
     ;(if (or (= (length filtered-posns-1) 10) (= (length filtered-posns-2) 10)) #t #f)))
-
-(define (cprod l1 l2)
-  (append* (map (lambda (y) (map (lambda (x) (cons y x)) l2)) l1)))
-(define (part-board? coord)
-  (part-of-board? (car coord) (cdr coord) board))
-(define valid-slots (filter part-board? (cprod (range n) (range n))))
 
 (define (occupied-slot? i j board)
   (> (2d-vector-ref board i j) 0))
