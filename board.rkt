@@ -1,5 +1,6 @@
 #lang racket
 (require "minimax.rkt")
+(require "board_utils.rkt")
 (require 2htdp/universe)
 (require 2htdp/image)
 (require lang/posn)
@@ -63,43 +64,13 @@
 (define (next-pegs-player player board)
    (circle slot-radius "solid" (list-ref player-next-colors (- player 1))))
 
-; To be moved to board-shape.rkt
-(define (part-of-board? i j board)
-  (cond
-  [(or (= board 1) (= board 3)) (or (and (< i 17) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
-                                (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))
-      (and (< i 21) (> i 7) (if (= 0 (modulo i 2)) (and (>= j (/ i 2)) (<= (* 2 j) (- 40 i)))
-                                (and (>= j (quotient i 2)) (<= (* 2 j) (- 39 i))))))]
-  [(= board 2) (or (and (< i 12) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
-                                (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))
-                   (and (> i 11) (< i 19) (if (= 0 (modulo i 2)) (and (>= (* 2 j) (+ i 2)) (<= (* 2 j) (- 38 i)))
-                                              (and (>= (* 2 j) (+ i 1)) (<= (* 2 j) (- 37 i))))))]))
-
-; To be moved to board-shape.rkt
-(define (player-posns? player i j board)
-  (cond [(or (= board 1) (= board 3))
-         (cond [(= player 1) (and (< i 8) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
-                                (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))]
-               [(= player 2)  (and (< i 21) (> i 16) (if (= 0 (modulo i 2)) (and (>= j (/ i 2)) (<= (* 2 j) (- 40 i)))
-                                (and (>= j (quotient i 2)) (<= (* 2 j) (- 39 i)))))])]
-        [(= board 2)
-         (cond [(= player 1) (and (< i 8) (> i 3) (if (= 0 (modulo i 2)) (and (>= j (- 12 (/ i 2))) (<= j (+ 8 (/ i 2))))
-                                (and (>= i (- 23 (* 2 j))) (>= i (- (* 2 j) 15)))))]
-               [(= player 2) (and (> i 14) (< i 19) (if (= 0 (modulo i 2)) (and (>= (* 2 j) (+ i 2)) (<= (* 2 j) (- 38 i)))
-                                              (and (>= (* 2 j) (+ i 1)) (<= (* 2 j) (- 37 i)))))])]))
-
-(define (not-in-board? coord)
-  (not (part-of-board? (car coord) (cdr coord) board)))
-
-(define (part-board? coord)
-  (part-of-board? (car coord) (cdr coord) board))
-
-(define (cprod l1 l2)
-  (append* (map (lambda (y) (map (lambda (x) (cons y x)) l2)) l1)))
-(define empty-slots (filter not-in-board? (cprod (range n) (range n))))
-
+(define empty-slots (filter (lambda (x) (not-in-board? x board)) (cprod (range n) (range n))))
 
 (define empty-board (place-images (make-list (length empty-slots) peg) (map ind->posns empty-slots) full-board))
+
+(define players-posns null)
+
+                       
 
 (define (place-initial-pegs i in-board)
   (if (= i 0) in-board
@@ -156,7 +127,9 @@
   (let* ([coords (if ind (index->coords i j) (cons i j))])
     (place-image (peg-for-player player board) (car coords) (cdr coords) image)))
 
-(define valid-slots (filter part-board? (cprod (range n) (range n))))
+(define valid-slots (filter (lambda (x) (part-board? x board)) (cprod (range n) (range n))))
+
+
 
 (define (get-index-of-clicked x y b)
   (filter (lambda (z) (inside-a-slot? x y (car z) (cdr z) b)) valid-slots))
