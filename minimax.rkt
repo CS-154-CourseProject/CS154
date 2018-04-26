@@ -146,7 +146,7 @@
    
    (/ (foldl (lambda (x y) (+ y (helper x))) 0 (range 0 size)) 10))
 
-   (define g (game-progress 9 current-player))
+   (define g (game-progress 12 current-player))
 
    (define wvertical (list-ref parameters 0))
    (define whop (list-ref parameters 1))
@@ -160,7 +160,7 @@
  (define (score-evaluater row column current-player board-type)
    
    (define (horizontal-distance)
-     (let* ([centre 11]
+     (let* ([centre (if (even? row) 10.5 11)]
             [score (- centre (abs (- centre column)))])
        score))
    
